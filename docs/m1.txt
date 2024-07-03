@@ -1,0 +1,85 @@
+// Declaração de uma função nativa em C++ para impressão
+native func print;
+
+// Declaração e inicialização de variáveis com inferência de tipo
+var x1 i32 = 23;
+var x2 i32 = 50;
+var x3 i32 = x1 + x2;
+var x4 i32 = x1 - x2;
+print(x3); // Uso da função print
+
+// Definição de uma função simples
+func sum(x i32, y i32) i32 {
+    return x + y;
+}
+
+// Definição de uma estrutura simples com generics
+struct Coordinates<T> {
+    x T;
+    y T;
+}
+
+// Criação de uma instância de Coordinates com tipo específico
+var c = Coordinates<f32> {x: 12.13, y: 42.23};
+print(c.type_name);
+
+// Inferência de tipo com uma estrutura aninhada
+struct NestedStruct {
+    userInfo {
+        name string;
+        age i32;
+    };
+    coordinates Coordinates<f32>; // Uso da estrutura genérica
+}
+
+var variable = NestedStruct {
+    userInfo {
+        name: "João";
+        age: 23;
+    };
+}
+
+// Criação de um Exotype a partir de uma função
+func makeExoType<T>(t Type) struct {
+    name string;
+    type T;
+}
+
+var content = makeExoType<string>({
+    name: "Hello";
+    type: "Sample Text";
+});
+
+// Função de alta ordem que aceita uma função e retorna outra função
+func highOrder(f func(i32) i32) func() i32 {
+    return () -> f(10) + 10;
+}
+
+var funcResult = highOrder(sum);
+print(funcResult());
+
+
+# capacidade de criar funções reflexidas que só serão compiladas posteriormente
+
+use context sql-table {
+    
+    @table(name = "example")
+    struct Table {
+        name varchar(30)
+        age integer
+    }
+
+    var data = <sql>select ? from Table</sql>
+
+    print data.a
+    print data.b # ao setar o 'b' devemos executar a função
+}
+
+# para depois
+# ou component(btree Btree) func sql(parameters map<string,any>) 
+@[component(btree *SyntaxTree)]
+func sql(parameters map<string,any>) {
+    val vals = btree.loadAllGetters().map(el -> el.name)
+    btree.replace("?", vals.join(","))
+}
+
