@@ -6,7 +6,6 @@ class Interpreter:
 
     def visit(self, node):
         method_name = 'visit_' + type(node).__name__
-        print("Method visited: ", method_name)
         visitor = getattr(self, method_name, self.generic_visit)
         return visitor(node)
 
@@ -24,5 +23,4 @@ class Interpreter:
 
     def interpret(self):
         tree = self.parser.expr()
-        pdb.set_trace()
         return self.visit(tree)

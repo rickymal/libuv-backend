@@ -39,8 +39,6 @@ class Parser:
     # generate the tree
     def expr(self):
         node = self.factor()
-        print(node.value)
-        print("self.current_token: " + str(self.current_token))
 
         while self.current_token.type in ('PLUS', 'MINUS'):
             token = self.current_token
