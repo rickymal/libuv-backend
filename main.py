@@ -4,7 +4,7 @@ from lib.parser import Parser
 from lib.interpreter import Interpreter
 
 def main():
-    input_expr = "35 + 2 - 3"
+    input_expr = "9 + 1 - 1"
     lexer = Lexer()
     lexer.from_input(input_expr)
     tokens = lexer.tokenize()

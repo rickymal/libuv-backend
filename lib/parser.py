@@ -20,12 +20,14 @@ class Parser:
         self.current_token = self.tokens[self.position]
 
     def eat(self, token_type):
-        pdb.set_trace()
         if self.current_token.type == token_type:
-            self.current_token = self.tokens[self.position]
             self.position += 1
+            if self.position < len(self.tokens):
+                self.current_token = self.tokens[self.position]
+            else:
+                self.current_token = None
         else:
-            raise Exception(f'Unexpected token: {self.current_token.type}, expected: {token_type}')
+            raise Exception("Unexpected token: {self.current_type.type}, expected: {token_type}")
 
     def factor(self):
         token = self.current_token
@@ -36,9 +38,9 @@ class Parser:
 
     # generate the tree
     def expr(self):
-        
         node = self.factor()
-        self.eat('INTEGER')
+        print(node.value)
+        print("self.current_token: " + str(self.current_token))
 
         while self.current_token.type in ('PLUS', 'MINUS'):
             token = self.current_token
