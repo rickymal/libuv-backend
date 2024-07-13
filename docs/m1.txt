@@ -69,7 +69,7 @@ use context sql-table {
         age integer
     }
 
-    var data = <sql>select ? from Table</sql>
+    var data = <sql>select {{it.usedColumns}} from Table</sql>
 
     print data.a
     print data.b # ao setar o 'b' devemos executar a função
