@@ -35,7 +35,13 @@ def main():
         input_expr = file.read()
 
     language = Language()
-    print(f"Resultado: {language.load_tokens(input_expr)}")
+
+    tokens = language.load_tokens(input_expr)
+    print(f"Resultado: {tokens}")
+
+    print("Isolando")
+    for token in tokens:
+        print(token)
     # print(f"Resultado: {language.process(input_expr)}")
 
 

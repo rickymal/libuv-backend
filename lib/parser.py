@@ -1,17 +1,32 @@
-import pdb
+class FunctionCall(ASTNode):
+    def __init__(self, name, arguments):
+        self.name = name
+        self.arguments = arguments
 
-class ASTNode:
-    pass
-
-class BinaryOp(ASTNode):
-    def __init__(self, left, op, right):
-        self.left = left
-        self.op = op
-        self.right = right
-
-class Num(ASTNode):
-    def __init__(self, value):
+class VariableDeclaration(ASTNode):
+    def __init__(self, name, type, value):
+        self.name = name
+        self.type = type
         self.value = value
+
+class ConstantDeclaration(ASTNode):
+    def __init__(self, name, value):
+        self.name = name
+        self.value = value
+
+class PrintStatement(ASTNode):
+    def __init__(self, expression):
+        self.expression = expression
+
+class NativeFunction(ASTNode):
+    # A Razão para argumentos esse ASTNodes é porque precisamos considerar 
+    def __init__(self, name : str, arguments : list[ASTNode]):
+        self.name = name
+        self.arguments = arguments
+
+
+    def call(self, function):
+        self.function = function
 
 class Parser:
     def __init__(self, tokens):
@@ -19,33 +34,29 @@ class Parser:
         self.position = 0
         self.current_token = self.tokens[self.position]
 
-    def eat(self, token_type):
-        if self.current_token.type == token_type:
-            self.position += 1
-            if self.position < len(self.tokens):
-                self.current_token = self.tokens[self.position]
+    def parse(self):
+        nodes = []
+        while self.current_token is not None:
+            if self.current_token.type in ['VAR', 'CONST']:
+                nodes.append(self.parse_declaration())
+            elif self.current_token.type == "NATIVE":
+                pass
+            elif self.current_token.type == 'PRINT':
+                nodes.append(self.parse_print_statement())
             else:
-                self.current_token = None
-        else:
-            raise Exception("Unexpected token: {self.current_type.type}, expected: {token_type}")
+                # Handle other statements or raise an error
+                pass
+            if self.current_token:
+                self.eat(self.current_token.type)  # Move to the next token
+        return nodes
 
-    def factor(self):
-        token = self.current_token
-        if token.type == 'INTEGER':
-            self.eat('INTEGER')
-            return Num(token.value)
-        raise Exception('Syntax error')
+    def parse_declaration(self):
+        # Add detailed parsing logic for variable and constant declarations
+        pass
 
-    # generate the tree
-    def expr(self):
-        node = self.factor()
-        while self.current_token.type in ('PLUS', 'MINUS'):
-            token = self.current_token
-            if token.type == 'PLUS':
-                self.eat('PLUS')
-            elif token.type == 'MINUS':
-                self.eat('MINUS')
+    def parse_print_statement(self):
+        # Add parsing logic for print statements
+        pass
 
-            node = BinaryOp(left=node, op=token.type, right=self.factor())
+    # Existing methods like `eat`, `factor`, etc.
 
-        return node

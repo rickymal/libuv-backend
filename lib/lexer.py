@@ -104,7 +104,5 @@ class Lexer:
                     tokens.append(Token('IDENTIFIER', word))
             else:
                 raise Exception(f'Invalid character: {self.current_char}')
-
-        tokens.append(Token('EOF', None))
         return tokens
 

@@ -1,7 +1,9 @@
 # creating variables
 
-type i32 native; // para declarar o tipo para o compilador saber (no caso ficaria)
-native func type(data i32) string; // declarar que existe uma função native chamada type
+native type i32; // para declarar o tipo para o compilador saber, no caso o "native" indica que a implementação está interna na própria linguagem (escrita no parser ou interpretador ou sei lá)
+native func type(data i32) string; // declarar que existe uma função native chamada type, o conceito de "type" se mantem aqu
+native func print(data IPrintable) void;
+
 
 
 // explicit form
@@ -12,10 +14,12 @@ var x2 = 23
 // constant
 const x3 = 32
 
+// quatro formas distintas para chamar o método
 print x1
-print x2
+x2.print()
+print(x2)
 print x3
 
 
 print x3.type() // pode ser chamado assim
-print type(x3)
+print type(x3) // ou assim
