@@ -1,3 +1,6 @@
+class ASTNode:
+    pass
+
 class FunctionCall(ASTNode):
     def __init__(self, name, arguments):
         self.name = name

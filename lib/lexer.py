@@ -1,12 +1,14 @@
 import pdb
 
+
 class Token:
-    def __init__(self, type, value=None):
+    def __init__(self, type, category : str,value=None):
+        self.category = category # Determina a categoria do Token, se é modificador, token de parametro ou um identificador de operação.
         self.type = type
         self.value = value
 
     def __repr__(self):
-        return f'Token({self.type}, {repr(self.value)})'
+        return f'Token({self.type}, {self.category}, {repr(self.value)})'
 
 class Lexer:
     def __init__(self):
