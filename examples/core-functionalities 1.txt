@@ -1,0 +1,392 @@
+### 1. Tipos Nativos e Variáveis
+- **Tipos Básicos**: Define tipos nativos como `i32` que são integrados na implementação interna da linguagem.
+  ```zig
+  native type i32;
+  ```
+
+- **Variáveis e Tipagem**: Suporta declaração explícita e inferência de tipos para variáveis, com suporte a constante e redefinição de tipos como `any`.
+  ```zig
+  var x1 i32 = 23;
+  var x2 = 23;  // inferência de tipo
+  const x3 = 32;
+  var example any = 10;
+  example = "henrique";  // redefinição de tipo permitida
+  ```
+
+### 2. Funções e Interfaces
+- **Funções Nativas e Genéricas**: Define funções nativas e introduz conceitos de funções genéricas utilizando Monomorphization para tratar diferentes tipos de dados.
+  ```zig
+  native func type(data i32) string;
+  func generic_example[T](data T) T {
+      return data;
+  }
+  ```
+- Também introduze outros conceitos de genéricos como exotype ou genéricos como os do tipo Java, para a implementação de um genérico cujo comportamento nada mais é que um tipo buffer bruto (array e bytes) e a conversão do tipo (a forma como vai ser lido), é entrega pelo genéricos com o sinais "maior que" e "menor que" enquanto os genéricos inserido pela sintaxe de colchetes são iguais aos de templates como no C++.
+  ```zig
+  func generic_example<T>(data T) T {
+      return data;
+  }
+  ```
+
+
+- **Interfaces**: Declara interfaces como `IPrintable` para definir contratos para funções nativas.
+  ```zig
+  native interface IPrintable;
+  ```
+- A declaração de uma interface é feita de forma parecida com Golang:
+```zig
+  interface AnContract {
+    age f32
+    name string
+    doSomething(i32, string) string
+  }
+  ```
+- O uso
+```zig
+var data anContract = {
+    age: 32,
+    name: 'henrique'
+    
+    doSomething(var1 i32, var2 string) string {
+        // [...]
+    }
+}
+```
+
+```zig
+func doSomething(var1 anContract) {
+    
+}
+// can be called to any variable that respect
+var name AnObjThatRespectContract
+
+doSomething(name);
+```
+
+Em termos de design a linguagem funciona em termos de contrato. QUando se declara um objeto, o compilador (utilizando modulo de contrato) irá verificar declaração
+de tipos que se "encaixam" ao objeto criado, pois por definição toda variavel ou função cujo tipo não for declarado será declarado como uma interface anônima (ou ducking type), mas caso uma interface seja declarada, ela terá prioridade sempre
+
+Também temos o conceito de fuzzy type onde um objeto pode ser um conjunto de opções (na prática é um "any" com restrição)
+var obj i32 | string;
+
+### 3. Estruturas de Dados e Modificadores
+- **Estruturas de Dados Compostas**: Permite criar estruturas compostas e aninhadas, abordando também a herança e composição.
+  ```zig
+  type PersonType = {
+      name: string,
+      age: i32,
+  };
+  ```
+
+- **Múltiplos retornos**: Permite com que uma função possa retornar diferente dependendo do que é solicitado
+```zig
+  func doSomething() {
+      var name = 'henrique'
+      var age = 27
+      
+      return name or (name, age)
+  }
+  
+var name = doSomething()
+var name, age = doSomething();
+  ```
+
+### Sistema de modificação
+- A ideia da linguagem é que ela seja a mais limpa possível e que "motores" engine ou micro runtimes sejam injetados a depender da necessidade de uma parte do código Essa concepção é importante pois futuramente o processo de compilação será mais complexo a parte do sistema poderá ser compilado em uma máquina e parte em outra (como em um serverless), a declaração de un runtime devido a complexidade será chamada de modificador pois tem a capacidade de injetar novas palavras reservadas
+
+```zig
+native modifier try; // chamado na chamada da função
+native modifier async; // chamado na declaração da função
+```
+
+- **Modifcadores de retorno**: Permite com que uma função retorne algo ou dispare uma exceção caso seja esta chamada com try
+    ```zig
+        native modifier try; // implementar um mecaniamos de captura de error assim como habilitar a chamada do método throw dentro da função
+      func doSomething() {
+          var name = 'henrique'
+          var age = 27
+          throw TestException({
+              error: "ops"
+          }) // pode passar objetos
+          return name or (name, age)
+      }
+      
+      var content, err = try doSomething() // retorna o conteudo e um erro caso tenha ocorrido, assim como adiciona um modificador "throw", não terá bloco try catch
+      var content = try doSomethign(); // ou vai ser assim (ainda tô decidindo), nesse caso o compilador montara uma estrutura e a injetará e content terá um campo 'data' e outro campo 'error'
+      content.data.print() // onde supostamente está o dado
+      
+    var name = doSomething()
+    var name, age = doSomething();
+      ```
+
+###. Tudo é classe (ou tipo) no final
+Inspirado em Ruby e Python, a ideia é que tudo incluindo os tipos sejam na verdade "tipos" no final das coisas, por exemplo
+
+var content i32;
+content.type().print() // irá apresentar "integer of 32bits"
+i32.type().print() // irá apresentar "type"
+Type.type().print() // o "type" será do tipo dele mesmo
+
+
+- **Modificadores e Hooks**: Utiliza modificadores como `symbol` para alterar comportamento em tempo de compilação.
+  ```zig
+  native modifier symbol(options map(string, any));
+  ```
+
+### 4. Metaprogramação e Exotipos
+- **Exotipos**: Introduz exotipos para definir tipos em tempo de compilação ou através de JIT.
+  ```zig
+  symbol func exotype_example(data Type) Type {
+      return {
+          name: string,
+          age: i32,
+          data: Type,
+      };
+  }
+  ```
+
+### 5. Protótipos e Composição
+- **Prototipagem e Herança**: Explora conceitos de prototipagem em vez de uma estrutura de classe/instância tradicional, permitindo maior flexibilidade.
+  ```zig
+  type Matrix = {
+      name: string,
+      data: [][]float32,
+  };
+  ```
+
+Peço desculpas pela interrupção. Vamos continuar a partir do código 6, detalhando as operações e métodos:
+
+### 6. Operações e Métodos Extendidos
+A linguagem permite que métodos sejam chamados de diversas maneiras, refletindo uma abordagem flexível e adaptativa à sintaxe, facilitando o uso e a legibilidade do código.
+
+```zig
+print x1;
+x2.print();
+print(x2);
+print x3;
+print x3.type(); // pode ser chamado assim
+print type(x3); // ou assim
+```
+
+### 7. Tratamento de Tipos Complexos e Metaprogramação
+- **Exotipos e Generics**: Oferece suporte a tipos que são definidos dinamicamente (Exotipos) e também a tipos genéricos, permitindo uma metaprogramação avançada e flexível.
+
+```zig
+var new_variable = exotype_example(string);
+```
+
+- **Hooks e Modificadores**: Introduz o conceito de hooks e modificadores que permitem alterar o comportamento de tipos e funções durante a compilação, oferecendo um controle granular sobre o processo de compilação e a execução do código.
+
+```zig
+native modifier hook(args *any[], kwargs map(string, any)) any;
+```
+
+### 8. Estruturas Avançadas e Metadados
+- **Estruturas Dinâmicas e Matrizes**: Permite a criação de estruturas dinâmicas e matrizes que podem ter seu comportamento e estrutura alterados em tempo de compilação.
+
+```zig
+type Matrix {
+    name: string,
+    data: [][]f32,
+
+}
+```
+
+### 8. Tipos no Exotype
+Os tipos no exotype podem ser estaticamente determinados ou indeterminados caso determinado ele usará um genérico tipo template ou o outro tipo (definido nas configurações de compilação)
+
+### 9. Composição direta e inversa
+A funcionalidade de composição direta e inversa que você descreveu é bastante interessante e se assemelha a conceitos avançados de orientação a objetos e metaprogramação. Aqui estão algumas considerações e ideias de como isso poderia ser implementado ou expandido:
+
+### Compreensão do Conceito
+Você propõe uma maneira de acessar e manipular propriedades e métodos de um tipo embutido em outro tipo diretamente, o que sugere uma relação de composição muito acoplada. Isso pode ser poderoso, mas também complexo de gerenciar em termos de visibilidade e acesso seguro.
+
+### Implementação e Regras
+1. **Segurança de Acesso**: A palavra-chave `from` permite uma forma de escopo cruzado que pode quebrar algumas convenções típicas de encapsulamento. Seria necessário implementar regras estritas sobre o que pode ser acessado e modificado através desta funcionalidade para evitar efeitos colaterais indesejados e manter a integridade do objeto.
+
+2. **Virtualização ou Ligação Direta**: Dependendo de como você deseja que o acesso seja resolvido em tempo de compilação ou em tempo de execução, você pode optar por um esquema de virtualização (onde os acessos são resolvidos em tempo de execução com alguma forma de tabela de despacho dinâmico) ou por ligação direta (mais rápido, resolvido em tempo de compilação, mas menos flexível).
+
+3. **Restrições de Acesso**: Você mencionou a possibilidade de restringir o acesso baseado em que propriedades ou métodos são usados dentro de um método. Isso pode ser implementado usando análise estática para verificar se um método de `BBB` que é chamado de `AAA` usa propriedades que são exclusivas de `BBB`. Se sim, isso poderia emitir um erro de compilação ou exigir uma declaração explícita de intenção pelo programador.
+
+### Sugestão de Melhoria
+- **Introdução de Interfaces ou Contratos**: Em vez de permitir acesso direto, poderia ser mais seguro e estruturado introduzir interfaces ou contratos que definem claramente quais métodos e propriedades são acessíveis de um tipo para outro. Isso mantém a separação de preocupações e o encapsulamento, enquanto ainda permite a flexibilidade desejada.
+
+- **Palavra-chave Específica para Escopo**: Em vez de `from`, poderia ser algo como `inner`, `embed`, ou `parent`, que explicitamente declara a intenção de acessar o escopo de um tipo contido ou contêiner.
+
+### Exemplo Revisado
+```cpp
+type AAA {
+    name: string
+    data: [][]f32
+    
+    func doAnotherThing() {
+        inner BBB.age.print(); // Explicitly stating inner scope access
+    }
+    
+    type BBB {
+        age: i32
+        func doSomething() {
+            outer name.print(); // Using 'outer' to access enclosing type's scope
+        }
+    }
+}
+```
+
+Essa abordagem mantém uma linha clara de visibilidade e acesso, enquanto ainda permite a funcionalidade que você deseja explorar. Se precisar de mais detalhes sobre como isso poderia ser implementado tecnicamente, especialmente em termos de estrutura de dados e manipulação de memória, estou aqui para ajudar!
+
+### 9. Declaração de tipo anônimo internamente para controler
+type AAA {
+    name string
+    age i32
+    
+    func something() {
+        
+    }
+    
+    type {
+        height f32
+        
+        func special() {
+            
+        }
+    }
+}
+
+
+var a = {
+    name: 'henrique'
+    age: 32
+}
+
+a.something()
+var b = {
+    name: 'henrique',
+    age: 32
+    height: 1.78
+}
+
+b.special() // pode chamar a função especial já que este possui o atributo
+
+
+type AAA {
+    name: string
+    age: i32
+    
+    func something() {
+        // Logic here
+    }
+    
+    // Using an interface to define optional functionality
+    interface IHeight {
+        height: f32
+        func special()
+    }
+    
+    // An object that implements IHeight can use special functions
+    func makeSpecial(obj: IHeight) {
+        obj.height = 1.78
+        obj.special()
+    }
+}
+
+var a: AAA = {
+    name: 'Henrique',
+    age: 32
+}
+
+var b: AAA & IHeight = {  // Explicitly combining AAA with IHeight
+    name: 'Henrique',
+    age: 32,
+    height: 1.78
+}
+
+a.something()
+b.special()  // Valid because b is declared with IHeight
+
+
+Compreendo sua perspectiva, e a ideia de ter métodos dentro de tipos para promover o encapsulamento é interessante e alinha-se com alguns princípios de design orientado a objetos. Vamos explorar os desafios, conceitos e a complexidade envolvida nessa abordagem.
+
+### Inferência de Tipo e Completude
+A inferência de tipo e completude em uma linguagem de programação envolve determinar automaticamente os tipos de dados das expressões, variáveis e retornos de funções sem que o programador tenha que especificá-los explicitamente. Isso é especialmente desafiador em sistemas como o que você propõe, onde os tipos podem ser dinamicamente alterados ou expandidos com novas propriedades e métodos. Aqui estão alguns pontos de complexidade:
+
+1. **Determinação de Contexto**: Se os métodos são definidos dinamicamente dentro de outros tipos ou objetos, o compilador ou o interpretador precisa constantemente verificar o contexto atual do objeto para determinar quais métodos e propriedades estão acessíveis. Isso pode levar a uma carga significativa de verificação de contexto durante a execução.
+
+2. **Verificações em Tempo de Execução**: Se a definição de um tipo pode mudar em tempo de execução ou se as propriedades podem ser dinamicamente adicionadas, a verificação de tipo não pode ser completamente realizada em tempo de compilação. Isso significa que muitas verificações precisam ser adiadas para o tempo de execução, o que pode reduzir a performance e aumentar a complexidade do gerenciamento de memória e erros.
+
+3. **Compatibilidade e Manutenção**: Programas que permitem a modificação dinâmica de tipos são mais difíceis de manter e depurar porque o fluxo de dados e os tipos podem não ser claros ou estáveis ao longo do tempo. Isso pode levar a bugs sutis e dificuldades em garantir que o programa se comporte como esperado em todas as situações.
+
+### Traits e Mixins
+**Traits** e **Mixins** são conceitos usados em programação para permitir a reutilização de código em várias classes sem necessariamente entrar na hierarquia de herança clássica.
+
+- **Traits**: Um trait é como uma interface, mas pode conter implementações de métodos. Classes ou objetos podem "implementar" um trait, adotando seus métodos e propriedades. Em linguagens como Rust, traits são usados para definir funcionalidades que podem ser compartilhadas entre tipos diferentes.
+
+- **Mixins**: Mixins são uma forma de incluir funcionalidades adicionais em classes existentes. Em linguagens como Ruby, um mixin pode adicionar métodos e variáveis de instância a uma classe, sem usar a herança tradicional. Isso permite compor comportamentos de maneira mais flexível.
+
+### Conclusão
+A complexidade de inferência de tipos em um sistema que permite definições dinâmicas dentro de tipos decorre da necessidade de manter o contexto atualizado e realizar verificações que normalmente seriam estáticas e feitas em tempo de compilação. Utilizar traits e mixins pode oferecer uma solução mais controlada e previsível para compartilhar comportamentos entre objetos sem a complexidade da herança múltipla e dos problemas associados à inferência dinâmica de tipos.
+
+Se você está tentando implementar esse sistema de tipos e métodos dinâmicos, talvez valha a pena considerar um modelo híbrido onde certas verificações de tipo são feitas em tempo de compilação, e extensões dinâmicas são cuidadosamente controladas para garantir segurança e manutenibilidade.
+
+Entendo sua abordagem e o foco em proporcionar uma experiência fluída e flexível para o usuário programador, mantendo uma base sólida em termos de design e implementação por trás dos panos. Vamos explorar algumas das ideias que você mencionou, focando nos conceitos de engenharia de linguagens e como eles podem ser aplicados para alcançar os objetivos da sua linguagem.
+
+### Composição Inversa e Uso de Tipos Anônimos
+
+A composição inversa, como você descreveu, pode ser implementada usando uma abordagem de passagem de dependência, onde os tipos "filhos" são injetados ou acessados dinamicamente. Isso pode ser alcançado através de:
+
+1. **Funções de Alta Ordem**: Funções que retornam outras funções ou que aceitam funções como parâmetros podem ser utilizadas para criar um sistema flexível onde as dependências dos "filhos" são resolvidas em tempo de execução. Isso permite que o sistema seja expansivo sem comprometer a segurança do tipo.
+
+2. **Tipos Anônimos e Genéricos**: A utilização de tipos anônimos declarados estaticamente pode ajudar a manter a segurança do tipo enquanto oferece flexibilidade. Esses tipos podem ser usados como genéricos em funções ou métodos, onde o compilador pode inferir o tipo real durante a compilação ou JIT (Just-In-Time compilation).
+
+### Implementação de Métodos e Encapsulamento
+
+Para métodos que acessam atributos ou métodos de "tipos filhos", você pode considerar:
+
+1. **Passagem Explícita de Dependências**: Em vez de tentar resolver automaticamente as dependências dos "filhos", o método pode exigir que essas dependências sejam passadas explicitamente. Isso aumenta a clareza do código e reduz a complexidade do compilador, mas coloca mais responsabilidade sobre o programador.
+
+2. **Interfaces e Contratos**: Definir interfaces claras para os tipos pode ajudar a garantir que todos os tipos "filhos" implementem os métodos e propriedades necessários. Isso facilita a composição e a verificação de tipos em tempo de compilação, reduzindo a necessidade de verificações dinâmicas.
+
+### Aspectos de Performance e Memória
+
+Quando você menciona a experiência do usuário programador e a implementação interna, é crucial considerar como essas abordagens afetam a performance e o uso de memória:
+
+1. **Overhead de Runtime**: A flexibilidade de tipos e métodos pode introduzir overhead de runtime devido à necessidade de verificação de tipos e resolução de métodos dinâmicos. Utilizar compilação JIT pode ajudar a otimizar essas operações em tempo de execução.
+
+2. **Gerenciamento de Memória**: A escolha entre herança, prototipagem e composição influencia diretamente como os objetos são armazenados na memória. Composição tende a ser mais modular e pode ajudar a evitar alguns dos problemas de herança profunda, como o "diamante da morte".
+
+### Conclusão
+
+Sua abordagem para a linguagem é inovadora e focada na usabilidade, mas traz desafios significativos em termos de design de linguagem e implementação. O balanceamento entre flexibilidade, segurança do tipo e performance será crucial. Continuar explorando algoritmos e estratégias de outras linguagens e sistemas pode oferecer insights valiosos e ajudar a moldar soluções eficazes para esses desafios. Se precisar de mais detalhes sobre algum desses tópicos ou exemplos específicos de implementação, estou à disposição para ajudar.
+
+
+### 10. Compreendendo interfaces
+
+A nivel do compilador, as interfaces podem ser de ser três tipos:
+interfaces vtable: interfaces cujo contrato é mapeado por meio de vtable
+interfaces natives: haverá uma cópia de uma estrutura para outra como e a interface apenas auxiliará como a transcrição será feita.
+interfaces de compilação: a estrutura dos tipos serão mapeados na ordem adequada para que a passagem via interface seja feita de forma correta.
+
+
+- **Implementação de Contratos e Tipos Desconhecidos**: Utiliza um sistema de contratos internos para gerenciar e validar os tipos utilizados no código, diferenciando entre `any` e `unknown` para oferecer mais segurança e flexibilidade.
+
+### 9. Polimorfismo e Herança
+- **Prototipagem vs. Herança Tradicional**: Explora a prototipagem como alternativa à herança tradicional, possibilitando a criação de objetos que herdam comportamentos de múltiplas fontes, facilitando a reutilização de código e a extensibilidade.
+
+```zig
+type AAA {
+    anMethod() { ... }
+    type BBB {
+        anMethod() { ... } // sobrescreve o anterior
+    }
+}
+```
+
+- **Composição e Multi-Herança Simulada**: Discute como a linguagem permite simular multi-herança por meio de composição, tratando as limitações típicas da herança múltipla com uma abordagem de composição inteligente.
+
+```zig
+var variable = AAA(anA: BBB, anC: CCC);
+variable.anMethodCreatedInBBB();
+variable.anMethodCreatedInCCC();
+```
+
+### Conclusão
+A linguagem é projetada para ser altamente versátil e poderosa, suportando uma ampla gama de paradigmas de programação, desde a programação funcional até a orientada a objetos e a metaprogramação. Com uma forte ênfase na flexibilidade de tipos e na metaprogramação, esta linguagem se propõe a ser uma ferramenta valiosa para desenvolvedores que buscam explorar novas possibilidades em design de software e implementação de sistemas complexos.

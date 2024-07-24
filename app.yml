@@ -1,0 +1,96 @@
+# This is a YAML document.
+
+title: YAML Example
+
+owner:
+  name: Jane Doe
+  dob: 1985-03-15T09:45:00-07:00
+
+database:
+  enabled: true
+  ports:
+    - 9000
+    - 9001
+    - 9002
+  data:
+    - [alpha, beta]
+    - [2.718]
+  temp_targets:
+    cpu: 82.3
+    case: 75.5
+
+servers:
+  gamma:
+    ip: 192.168.0.1
+    dc: uswest1
+  delta:
+    ip: 192.168.0.2
+    dc: uswest1
+    country: España
+
+clients:
+  hosts:
+    - gamma
+    - delta
+
+products:
+  gadget:
+    - name: SuperWidget Pro
+      sku: 845612
+      color: silver
+    - name: SuperWidget Lite
+      sku: 845613
+      color: gold
+
+fruit:
+  banana:
+    color: yellow
+    taste:
+      sweet: true
+    texture:
+      smooth: true
+
+points:
+  - x: 2
+    y: 4
+    z: 6
+  - x: 8
+    y: 10
+    z: 12
+  - x: 3
+    y: 6
+    z: 9
+
+strings:
+  str1: "Hello, YAML!"
+  str2: |
+    This is a multiline
+    string in YAML.
+
+integers:
+  int1: 100
+  int2: 200
+  int3: 0
+  int4: -25
+
+floats:
+  flt1: 1.5
+  flt2: 2.7182
+  flt3: -0.05
+
+booleans:
+  bool1: true
+  bool2: false
+
+datetime:
+  date1: 1985-03-15T09:45:00Z
+  date2: 1985-03-15T02:45:00-07:00
+  date3: 1985-03-15T02:45:00.123456-07:00
+
+array_of_tables:
+  product:
+    - name: Screwdriver
+      sku: 956731248
+    - name: Wrench
+      sku: 357159852
+      color: silver

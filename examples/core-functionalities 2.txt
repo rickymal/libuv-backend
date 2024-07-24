@@ -1,0 +1,235 @@
+# creating variables
+
+/*
+    Gostaria que você visse dessa forma, a linguagem de programação possui a capacidade ter três categorias de tokens principais
+    operator: indica ao interpretador o tipo de operação que será feito, por exemplo: alloca memória para uma variável
+    parameter: indica ao interpretador como ele fará isso específicamente, ou detalhes da operação de allocação
+    name: esse acredito que seja intuitivo
+*/
+
+native type i32; // para declarar o tipo para o compilador saber, no caso o "native" indica que a implementação está interna na própria linguagem (escrita no parser ou interpretador ou sei lá)
+
+// <parameter> <operator> <name> <parameter> <parameter>
+native func type(data i32) string; // declarar que existe uma função native chamada type
+
+// aqui se declara a interface que será usada para a função print que será implementada nativamentivamente
+native interface IPrintable;
+
+// este é um exemplo de uma função genérica, ela aceita qualquer tipo de dado e retorna o mesmo tipo de dado
+// no compilador aplicaremos regras especiais para o uso disto, existe vários tipos de funções genéricas a serem implementadas.
+// Nesta lógica será utilizado Monomorphization
+func generic_example[T](data T) T {
+    return data
+}
+
+// Esse tipo pode ser considerado especial pois nesse caso ele pode ser reescrito com qualquer tipo ex:
+/*
+    var example any = 10;
+    example = "henrique"
+    example = {
+        name : "mauler",
+        age : 20
+    }
+
+    nenhum código acima causará erro, pois o tipo de dado any pode ser reescrito a qualquer momento
+    Eu ainda não sei como isso será feito se vai ser como uma simples estrutura como é feito no golang
+    onde temos um type que define o tipo e um um campo data para armazenar o valor ou algo parecido
+    como o que ocorre com o .NET que possui o tipo object que pode ser reescrito a qualquer momento
+    por meio de um mini runtime que ele tem (fale mais sobre a diferença dos dois para mim @chatgpt)
+
+    me fale das diferenças nas metodologias entre as plataformas.
+
+    Outra coisa, existe o tipo 'any' e o tipo 'unknown', qual a diferença entre eles?
+    Acho que aqui teremos um ponto especial. o tipo 'unknown' é parecido com o any com a diferença que o 
+    programa em si irá le o tipo e salvar no manticore que é um mini programa interno que será responsável por contratos;
+
+    o que isso significa?
+    Um contrato é como uma espécie de contrato que o programa faz com o compilador, ele diz que ele irá usar o tipo de dado que foi definido. Em outras palavras ele serve tanto para o compilador para dizer-lo como ele deve alocar a memória a ser usada e para o próprio compilador dizendo como deve tratar.
+*/
+native type any;
+native type unknown;
+
+
+// aqui temos uma implementação de um modifier, que é uma função que pode ser usada para modificar o comportamento de uma função ou tipo de dado como será feito no exemplo abaixo
+native modifier symbol(options map(string, any));
+neste exemplo o symbol é um modificador que fará com que a função tenha características de comptime como há no Zig, onde o compilador irá gerar um código que será executado em tempo de compilação e não em tempo de execução. Isso permite com que possamos inserir como parâmetro um tipo.
+
+/*
+    A ideia aqui é que um objeto (algo criado utilizando as chaves {}) possa também servir para definir
+    uma estrutura, a diferença é que nesse caso o tipo do dado vai ser definido em tem de compilação ou via JIT (just in time) ou ahead of time (compilação antecipada) dependendo da implementação (como o método é usado), por exemplo a função abaixo for chamada considerando um tipo de dado "any"
+
+    Neste exemplo abaixo teremos algo bem parecido com a linguagem de programação terra, onde temos um tipo de dado que é definido em tempo de compilação e outro que é definido em tempo de execução.
+*/
+synmbol func exotype_example(data Type) Type {
+    return {
+        name : string
+        age : i32
+        data : Type
+    }
+}
+
+// um exemplo de uma função que recebe um exotype (como é feito na linguagem de programação terra)
+var new_variable exotype_example(string)
+
+
+// podemos criar coisas abstratas, ou seja, tipos de dados que não podem ser instanciados diretamente, mas podem ser herdados por outros tipos de dados
+abstract type Something {
+    name string
+    age i32 
+
+    type ConcreteType {
+
+    }
+}
+
+consr name Something.ConcreteType;
+
+func something(const data Something) void {
+
+}
+
+something(name);
+
+
+// do jeito que fazemos a allocacação de memória é na stack, mas o compilador vai ser se deve colocar na heap ou não (eu acho).
+
+
+// preciso descobrir como fazer multiherança também, agora só estou fazendo herança simples com classe abstrata e construção interna.
+
+// declarando uma novo tipo
+type PersonType {
+    name string
+    age i32
+}
+
+var person1 PersonType
+
+type BBB {
+    anMethodCreatedInBBB() {
+        // [...]
+    }
+}
+
+type CCC {
+    anMethodCreatedInCCC() {
+        // [...]
+    }
+}
+
+type AAA {
+    constructor(anA BBB, anC CCC);
+    // or simply constructor(BBB, CCC)
+}
+
+var variable AAA
+
+// a composição pode ser abstraída para simular uma herança  múltipla
+/** 
+    Por trás dos panos qunado se faz isso o compilador cria
+    como se fosse uma herança virtual, no caso e a desvantagem da compósiço
+    causado pelo acesos ao dados por multiplas chamadas vai ser resolvido 
+    porque nad prática será criado métodos virtuais que apontarão diretamente para os métodos dos outros tipos.
+*/
+variable.anMethodCreatedInBBB();
+variable.anMethodCreatedInCCC();
+
+
+// Não há um conceito claro de herança, mas sim uma composição de tipos de dados. E por isso podemos sobrecarregar os métodos 
+
+
+type AAA {
+    anMethod() { ... }
+
+    type BBB {
+        anMethod() { ... } // esse sobrescreve o de cima 100% 
+    }
+}
+
+
+
+
+native func print(data IPrintable) void;
+native func map[T](data T, iterableData IIterable) Array<T> | Array(T); // um é genérico e outro um exotype (o tipo de dado que será usado para o array)
+
+
+// chamando uma função que recebe como parametro outra função (neste caso uma função anônima)
+data.map((data) { data.to(String) });
+data.map((data) { data.to String });
+data.map (data) {data.to String}; // observe o espaço entre o "map" e a função, isso indica que é um parâmetro! lembre-se que uma função não precisa parecer entre parentese como em javascript.
+data.map(func (data) { data.to String });
+
+// explicit form
+var x1 i32 = 23
+// infered
+var x2 = 23
+
+// constant
+const x3 = 32
+
+// quatro formas distintas para chamar o método, a ideia é que quando você a função como se fosse método, ele aceite desde que a função contenham no meu primeiro parâmetro a variável que iremos aplicar o "açucar sintatico"
+// métodos podem ser chamados sem parentese também como em ruby contando que existe pelo menos um parâmetro se não fica obrigatório
+print x1
+x2.print()
+print(x2)
+print x3
+print x3.type() // pode ser chamado assim
+print type(x3) // ou assim
+
+
+native modifier hook(args *any[], kwargs map(string, any)) any;
+
+Podemos criar tipos personalizados com hooks 
+// ou const Matrix = {}
+type Matrix {
+    name string
+    data [][]float32
+    aqui podemos personalizar o comportamento de um tipo de dado, podemos criar estruturas aninhadas que dependem da principal também
+
+    type InternalMatrix {
+        // [...]
+    }
+}
+
+// aqui criamos uma variável a partir da matriz, esse caso é curiosos porque o compilador irá criar uma função que irá chamar o construtor da matriz
+// e irá atribuir o valor da variável.
+name Matrix;
+
+var internalMatrix InternalMatrix = {
+
+}
+
+// assim como  no ruby não temos uma definição clara de 'classe' para 'instancia' (nesse caso não é bem uma classe mas um tipo)
+var data = 'henrique'
+
+
+type varchar(length i32) string {
+
+    func constructor(length i32) Type {
+        var string.length i32 = length
+        return string
+    }
+}
+
+
+
+var ctx varchar(10);
+
+// uma implementação de string que delimina a quantidade de characteres, onde for usada haverá uma validação autoática.
+native type varchar(length string);
+
+type Matrix<T> {
+    name string
+}
+
+// lembrando que criando variavel com mesma assinatura de função, funciona
+// porém o compilador irá criar uma função que irá chamar o construtor da matriz caso tenh a assinatura
+const name Matrix = {
+    name : "matrix"
+}
+// ou simplesmente
+const name = {
+    name : "matrix"
+} // o compilador vai ficar entre "Matrix" e um simples objeto literal com a propriedade "name".
+// A ideia é um duck struct aqui, se usa os métodos do tipo definido, provavelmente é do mesmo tipo, é uma matrix, se não é só um objeto literal com 'name'.
+
+

@@ -20,7 +20,7 @@ statement
 
 // Declaração de variáveis e constantes
 varDeclaration
-    : ('var' | 'const') variableName type? '=' expression
+    : functionDeclaration 
     ;
 
 // Chamada de função
