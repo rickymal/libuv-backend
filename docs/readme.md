@@ -509,3 +509,5 @@ describe "doSomething" {
 
 isso faz sentido? A ideia é termos uma conexão orgânica entre desnvolvimento de software e analise de qualidade do mesmo fazendo o QA ter um bom controle granular
 o "before" é exemplo de um código escrito por programador, mas a QA teria um dashboard de compilação par aajudar nos testes, algo assim onde ela iria setar de forma 'no-code'
+
+

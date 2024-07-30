@@ -1,0 +1,7 @@
+var x i32 = 300;
+var y i32 = 30
+var result = x + y;
+var complex = x + y * 100
+var variable = x - y * 100 + 100;
+var variable = (x - y) * 100 + 100;
+var complexCalculus = ((3 + 2) * (5 - 3)) / ((4 / 2) + (6 * (2 - 1))) - 7 + 8;

@@ -232,6 +232,105 @@ type AAA {
 }
 ```
 
+
+
+```cpp
+type AAA {
+    name string
+    age i32
+
+    constructor(data IStrategyOne);
+
+    constructor(data IStrategyTwo);
+}
+
+var a AAA;
+a = {
+    name: 'henrique',
+    age: 32
+    // embaixo misturado mesmo podemos colocar os parametros do constructor
+    height: 1.78 // é um atributo de uma das interfaces acima, 
+}
+
+```
+
+
+```cpp
+type AAA {
+    name string
+    age i32
+    data constructor(data IStrategyOne) || constructor(data IStrategyTwo);
+}
+
+var a AAA;
+a = {
+    name: 'henrique',
+    age: 32
+    // embaixo misturado mesmo podemos colocar os parametros do constructor
+    data: {
+        height: 1.78 // é um atributo de uma das interfaces acima, 
+
+        func special() { ... }
+    }
+}
+```
+
+COmo pode ser observado o construro é parâmetro 
+
+
+// aqui temos o mesmo principio só que com aninhamento
+```cpp
+type AAA {
+    name string
+    age i32
+
+    data type IStrategyOne {
+        func special1() { ... }
+    }
+
+    data type IStrategyTwo {
+        func special2() { ... }
+    }
+
+}
+
+var a AAA;
+a = {
+    name: 'henrique',
+    age: 32
+    // embaixo misturado mesmo podemos colocar os parametros do constructor
+    data: {
+        height: 1.78 // é um atributo de uma das interfaces acima, 
+
+        func special() { ... }
+    }
+}
+```
+
+
+// essa forma também permite com que possamos te parâmetros OR exlcusivo por exemplo
+// o objeto recebe nome idade, "altura" ou "peso" sendo info da altura em uma estrategia e peso em outra estrategie 
+// cada uma com seus métodos específicos para no final ter o objeto com todos os atributos que entrega o que precisamos
+// nesse exemplo  de altura e peso, seria algo como: IMC por exemplo  supondo que possa haver um calculo com peso e outro com altura
+// e ambos com os atributos já existentes (não sei como o claculo de IMC funciona mas acho que deu para entender a ideia)   
+```cpp
+type AAA {
+    name string
+    age i32
+
+    type IStrategyOne {
+        func special1() { ... }
+    }
+
+    type IStrategyTwo {
+        func special2() { ... }
+    }
+
+}
+```
+
+
+
 Essa abordagem mantém uma linha clara de visibilidade e acesso, enquanto ainda permite a funcionalidade que você deseja explorar. Se precisar de mais detalhes sobre como isso poderia ser implementado tecnicamente, especialmente em termos de estrutura de dados e manipulação de memória, estou aqui para ajudar!
 
 ### 9. Declaração de tipo anônimo internamente para controler
@@ -269,8 +368,13 @@ b.special() // pode chamar a função especial já que este possui o atributo
 
 
 type AAA {
+    extends "app.hcl" // integra a configuração que está no arquivo app.hcl
+    import "app.toml" // é parecido porém é a nível de instancia, seriam valores 'default'
+
     name: string
     age: i32
+    self.count i32; // assim como no Ruby, o self define configurações estática a serem usadas.
+    // no arquivo app.hcl podemso ver a definição do valor desta variável
     
     func something() {
         // Logic here
@@ -390,3 +494,34 @@ variable.anMethodCreatedInCCC();
 
 ### Conclusão
 A linguagem é projetada para ser altamente versátil e poderosa, suportando uma ampla gama de paradigmas de programação, desde a programação funcional até a orientada a objetos e a metaprogramação. Com uma forte ênfase na flexibilidade de tipos e na metaprogramação, esta linguagem se propõe a ser uma ferramenta valiosa para desenvolvedores que buscam explorar novas possibilidades em design de software e implementação de sistemas complexos.
+
+
+A linguagem também se integra nativamente com .toml, .yml, .json, e .xml para facilitar a configuração e a integração com outras ferramentas e frameworks. A ideia é que seja uma linguagem que permita fácil configuração, a ideia é separar claramente os criadores de ferramentas dos criadores de linguagens. Quem usa ferramenta o estado da tarde é quando só tem configurações praticamente 
+
+
+Permite construção de decoradores também:
+```zig
+func decorator() func {
+
+
+    return () {
+
+    }
+}
+
+
+// executado em tempo de execução
+@decorator
+func example() {}
+
+// executado em tempo de compilação
+@[decorator]
+func example() {}
+
+
+Como a linguagem escrevia isso de um jeito simples
+// carregar pdf em node no exemplo da naologic
+
+
+https://flowiseai.com/
+quero que seja simples como é nesse flowiseai

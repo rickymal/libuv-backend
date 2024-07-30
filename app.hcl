@@ -1,5 +1,9 @@
 # Application configuration
 
+app {
+  count = 300
+}
+
 app "myapp" {
   name        = "My Complex Application"
   description = "A sophisticated application with various components"

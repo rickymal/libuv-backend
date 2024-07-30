@@ -147,15 +147,14 @@ type AAA {
 
 
 
-
+// um é genérico e outro um exotype (o tipo de dado que será usado para o array)
 native func print(data IPrintable) void;
-native func map[T](data T, iterableData IIterable) Array<T> | Array(T); // um é genérico e outro um exotype (o tipo de dado que será usado para o array)
+native func map[T](data T, iterableData IIterable) Array<T> | Array(T);
 
 
 // chamando uma função que recebe como parametro outra função (neste caso uma função anônima)
 data.map((data) { data.to(String) });
 data.map((data) { data.to String });
-data.map (data) {data.to String}; // observe o espaço entre o "map" e a função, isso indica que é um parâmetro! lembre-se que uma função não precisa parecer entre parentese como em javascript.
 data.map(func (data) { data.to String });
 
 // explicit form
