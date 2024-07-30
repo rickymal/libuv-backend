@@ -1,0 +1,3 @@
+func anotherFunction(arg1 func(i32) i32, arg2 string) {
+    println("OI");
+}

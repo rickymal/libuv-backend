@@ -1,0 +1,3 @@
+async('libuv') stream func asyncFunction(arg1 string, arg2 string) {
+    anMethod('call');
+}

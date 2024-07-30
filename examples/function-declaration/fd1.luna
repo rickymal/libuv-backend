@@ -1,0 +1,13 @@
+func main() {
+    println(10);
+}
+
+func main() {
+    println('this is an text');
+    println('this is another text');
+}
+
+func main() {
+    var name string = "interpolated";
+    println("this is an ${name} text");
+}

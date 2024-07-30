@@ -1,0 +1,3 @@
+func sum(arg1 i32, arg2 i64) {
+    return arg1 + arg2;
+}
