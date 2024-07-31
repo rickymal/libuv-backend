@@ -1,0 +1,9 @@
+func greet(name string) {
+    if name != "" {
+        return "Olá, " + name;
+    }
+    return "Olá, visitante";
+}
+
+print(greet("João"))
+print(greet(""))

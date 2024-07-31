@@ -1,6 +1,6 @@
 grammar luna;
 
-// variable declarations
+// Variable Declarations
 program: statement* EOF;
 
 typeModifier: 'const' | 'var';
@@ -29,35 +29,63 @@ atom:
     ;
 
 memoryAllocation: typeModifier WORD allocatorSize? '=' expression ';'?;
-functionDeclaration: (modifier+) 'func' WORD '(' parameters? ')' type? block;
+functionDeclaration: (modifier+)? 'func' WORD '(' parameters? ')' type? block;
 anonymysFunctionDeclaration: 'func'? WORD? '(' parameters? ')' type? block;
 wordWithParameter: 
-    WORD '(' (INT | STRING) ')'
+    WORD '(' (expression (',' expression)*)? ')'
 ;
-returnCall: 'return' expression?;
+
+conditionExpression: expression ('<' | '>' | '<=' | '>=') expression;
+
+// Control Flow Structures
+ifStatement
+    : 'if' conditionExpression block ('else' block)?
+    ;
+
+whileStatement
+    : 'while' conditionExpression block
+    ;
+
+assignmentStatement: WORD '=' expression ';'?;
+
+forStatement
+    : 'for' '(' memoryAllocation? ';' conditionExpression? ';' assignmentStatement? ')' block
+    ;
+
+returnCall: 'return' expression? ';'?;
+breakStatement: 'break' ';';
+continueStatement: 'continue' ';';
+
 parameters: parameter (',' parameter)*;
-parameter: WORD type;
+parameter: WORD type?;
 
 modifier:
     wordWithParameter
     | WORD
 ;
 
-
 type: 'i32' | 'i64' | 'void' | WORD | 'func' '(' typeParameters? ')' type ; 
 typeParameters: type (',' type)*;
 
-
 block: '{' statement* '}';
+
+operationStatement: 
+    ifStatement
+    | whileStatement
+    | forStatement
+    | breakStatement
+    | continueStatement
+    ;
+
+statement
+    : memoryAllocation
+    | wordWithParameter
+    | functionDeclaration
+    | returnCall
+    | operationStatement
+    ;
 
 WORD: [a-zA-Z_][a-zA-Z_0-9]*;
 INT: [0-9]+;
 STRING: '"' .*? '"' | '\'' .*? '\'';
 WS: [ \t\r\n]+ -> skip;
-
-statement
-    : memoryAllocation
-    | functionDeclaration
-    | block
-    | returnCall
-    ;

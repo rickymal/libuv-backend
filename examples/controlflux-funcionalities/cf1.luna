@@ -1,0 +1,9 @@
+if 1 < 2 {
+    print("OI")
+}
+
+if 3 == 2 {
+    print("Maior")
+} else {
+    print("Menor ou igual")
+}

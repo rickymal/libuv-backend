@@ -1,6 +1,0 @@
-var x i32 = 300;
-var y i32 = 300
-var isString string = "hello"
-var isBool bool = true
-var isInt int = 100
-var isArray []i32 = [1, 2, 3, 4, 5]
