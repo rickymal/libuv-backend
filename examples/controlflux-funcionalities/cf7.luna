@@ -1,0 +1,11 @@
+print("Olá, mundo!")
+log(404)
+const maxCount = 100;
+var currentCount = 0;
+
+for (var i = 0; i < 10; i = i + 1) {
+    if i % 2 == 0 {
+        continue;
+    }
+    print("Ímpar: ", i)
+}

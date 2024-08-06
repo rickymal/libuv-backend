@@ -1,0 +1,17 @@
+type Person struct {
+    name string
+    age i32
+    address string
+}
+
+var p Person = {
+    name: "Henrique"
+    age: 32
+    address: "Curuzu"
+}
+
+func beija_flor(p Person) {
+    return p
+}
+
+beija_flor(p);

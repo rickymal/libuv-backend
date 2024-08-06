@@ -1,3 +1,5 @@
+(env) rickymal@rickymal-550XDA:~/Área de trabalho/libuv-backend/examples$ antlr4-parse luna.g4 program -tokens -trace -gui -f type-structure/ts1.luna 
+
 https://github.com/antlr/antlr4/blob/master/doc/getting-started.md
 
 

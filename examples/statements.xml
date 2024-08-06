@@ -1,0 +1,18 @@
+<statements>
+    <statement>
+        <name>functionDeclaraion</name>
+        <token>func [NAME] [PARAMETERS] [RETURN]? [BODY]</token>
+        <examples>
+            <example>
+                func name(ar string) {
+                    println("OI")
+                }
+            </example>
+            <example>
+                func name(ar string, or string = 'default') {
+                    println("OI")
+                }
+            </example>
+        </examples>
+    </statement>
+</statements>

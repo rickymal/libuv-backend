@@ -1,3 +1,9 @@
+- [ ] Criar o parser para as estruturas
+- [ ] Começar a trabalhar com llvm, criando o interpretador e o parser
+- [ ] Construir o parser para a linguagem, agora teremos interpretação de código e o parser de fato para cada exemplo criado
+- [ ] preparar o kernel e fazer plugin para a linguagem no vscode
+- [ ] Lançar e criar projetos de eng. naval nele de cálculo estrutural e criar um sistema de ERP, não seu ainda, talvez um crud
+
 Criar uma linguagem de programação é uma tarefa fascinante e complexa. Para o MVP (Minimum Viable Product) de uma linguagem de programação, além de funções e estrutura de dados, há alguns outros componentes essenciais que você pode considerar. Vamos discutir as próximas etapas com foco nas funcionalidades básicas:
 
 ### 1. **Funções**

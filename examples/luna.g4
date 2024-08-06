@@ -2,14 +2,18 @@ grammar luna;
 
 // Variable Declarations
 program: statement* EOF;
-
 typeModifier: 'const' | 'var';
+allocatorSize: ('i32' | 'i64' | WORD);
 
-allocatorSize: ('i32' | 'i64');
+
+
+elementLiteral: WORD ':' (WORD | STRING | INT);
+objectLiteral : '{' (elementLiteral ','?)+ '}';
 
 expression: 
     primaryExpression
     | wordWithParameter
+    | objectLiteral
     | expression '+' expression
     | expression '-' expression
     ;
@@ -32,11 +36,10 @@ memoryAllocation: typeModifier WORD allocatorSize? '=' expression ';'?;
 functionDeclaration: (modifier+)? 'func' WORD '(' parameters? ')' type? block;
 anonymysFunctionDeclaration: 'func'? WORD? '(' parameters? ')' type? block;
 wordWithParameter: 
-    WORD '(' (expression (',' expression)*)? ')'
+    WORD '(' (expression (',' expression)*)? ')' ';'?
 ;
 
-conditionExpression: expression ('<' | '>' | '<=' | '>=') expression;
-
+conditionExpression: expression (('<' | '>' | '<=' | '>=' | '!=' | '==' | '%') expression)*;
 // Control Flow Structures
 ifStatement
     : 'if' conditionExpression block ('else' block)?
@@ -64,7 +67,8 @@ modifier:
     | WORD
 ;
 
-type: 'i32' | 'i64' | 'void' | WORD | 'func' '(' typeParameters? ')' type ; 
+type: 'i32' | 'i64' | 'void' | 'string' | WORD | 'func' '(' typeParameters? ')' type;
+
 typeParameters: type (',' type)*;
 
 block: '{' statement* '}';
@@ -77,15 +81,28 @@ operationStatement:
     | continueStatement
     ;
 
+typeDeclaration: 'type' WORD 'struct' '{' fieldDeclaration* '}' ';'?;
+fieldDeclaration: WORD type ';'?;
+
+
+
+
+interfaceDeclaration: type WORD 'interface' block;
+
+memoryDeclaration: typeModifier WORD ';'?;
+
 statement
     : memoryAllocation
     | wordWithParameter
+    | memoryDeclaration
     | functionDeclaration
     | returnCall
     | operationStatement
+    | typeDeclaration
+    | interfaceDeclaration
     ;
 
-WORD: [a-zA-Z_][a-zA-Z_0-9]*;
+WORD: [a-zA-Z_][a-zA-Z_0-9]* | [\u4e00-\u9fa5]+; // Suporte para caracteres Unicode, incluindo caracteres chineses
 INT: [0-9]+;
 STRING: '"' .*? '"' | '\'' .*? '\'';
 WS: [ \t\r\n]+ -> skip;
