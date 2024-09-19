@@ -33,8 +33,8 @@ atom:
     ;
 
 memoryAllocation: typeModifier WORD allocatorSize? '=' expression ';'?;
-functionDeclaration: (modifier+)? 'func' WORD '(' parameters? ')' type? block;
-anonymysFunctionDeclaration: 'func'? WORD? '(' parameters? ')' type? block;
+functionDeclaration: (modifier+)? 'func' WORD '(' parameters? ')' typeSpec? block;
+anonymysFunctionDeclaration: 'func'? WORD? '(' parameters? ')' typeSpec? block;
 wordWithParameter: 
     WORD '(' (expression (',' expression)*)? ')' ';'?
 ;
@@ -60,16 +60,16 @@ breakStatement: 'break' ';';
 continueStatement: 'continue' ';';
 
 parameters: parameter (',' parameter)*;
-parameter: WORD type?;
+parameter: WORD typeSpec?;
 
 modifier:
     wordWithParameter
     | WORD
 ;
 
-type: 'i32' | 'i64' | 'void' | 'string' | WORD | 'func' '(' typeParameters? ')' type;
+typeSpec: 'i32' | 'i64' | 'void' | 'string' | WORD | 'func' '(' typeParameters? ')' typeSpec;
 
-typeParameters: type (',' type)*;
+typeParameters: typeSpec (',' typeSpec)*;
 
 block: '{' statement* '}';
 
@@ -82,12 +82,12 @@ operationStatement:
     ;
 
 typeDeclaration: 'type' WORD 'struct' '{' fieldDeclaration* '}' ';'?;
-fieldDeclaration: WORD type ';'?;
+fieldDeclaration: WORD typeSpec ';'?;
 
 
 
 
-interfaceDeclaration: type WORD 'interface' block;
+interfaceDeclaration: typeSpec WORD 'interface' block;
 
 memoryDeclaration: typeModifier WORD ';'?;
 

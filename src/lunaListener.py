@@ -1,6 +1,6 @@
-# Generated from luna.g4 by ANTLR 4.13.1
+# Generated from luna.g4 by ANTLR 4.9.2
 from antlr4 import *
-if "." in __name__:
+if __name__ is not None and "." in __name__:
     from .lunaParser import lunaParser
 else:
     from lunaParser import lunaParser
@@ -32,6 +32,24 @@ class lunaListener(ParseTreeListener):
 
     # Exit a parse tree produced by lunaParser#allocatorSize.
     def exitAllocatorSize(self, ctx:lunaParser.AllocatorSizeContext):
+        pass
+
+
+    # Enter a parse tree produced by lunaParser#elementLiteral.
+    def enterElementLiteral(self, ctx:lunaParser.ElementLiteralContext):
+        pass
+
+    # Exit a parse tree produced by lunaParser#elementLiteral.
+    def exitElementLiteral(self, ctx:lunaParser.ElementLiteralContext):
+        pass
+
+
+    # Enter a parse tree produced by lunaParser#objectLiteral.
+    def enterObjectLiteral(self, ctx:lunaParser.ObjectLiteralContext):
+        pass
+
+    # Exit a parse tree produced by lunaParser#objectLiteral.
+    def exitObjectLiteral(self, ctx:lunaParser.ObjectLiteralContext):
         pass
 
 
@@ -197,12 +215,12 @@ class lunaListener(ParseTreeListener):
         pass
 
 
-    # Enter a parse tree produced by lunaParser#type.
-    def enterType(self, ctx:lunaParser.TypeContext):
+    # Enter a parse tree produced by lunaParser#typeSpec.
+    def enterTypeSpec(self, ctx:lunaParser.TypeSpecContext):
         pass
 
-    # Exit a parse tree produced by lunaParser#type.
-    def exitType(self, ctx:lunaParser.TypeContext):
+    # Exit a parse tree produced by lunaParser#typeSpec.
+    def exitTypeSpec(self, ctx:lunaParser.TypeSpecContext):
         pass
 
 
@@ -230,6 +248,42 @@ class lunaListener(ParseTreeListener):
 
     # Exit a parse tree produced by lunaParser#operationStatement.
     def exitOperationStatement(self, ctx:lunaParser.OperationStatementContext):
+        pass
+
+
+    # Enter a parse tree produced by lunaParser#typeDeclaration.
+    def enterTypeDeclaration(self, ctx:lunaParser.TypeDeclarationContext):
+        pass
+
+    # Exit a parse tree produced by lunaParser#typeDeclaration.
+    def exitTypeDeclaration(self, ctx:lunaParser.TypeDeclarationContext):
+        pass
+
+
+    # Enter a parse tree produced by lunaParser#fieldDeclaration.
+    def enterFieldDeclaration(self, ctx:lunaParser.FieldDeclarationContext):
+        pass
+
+    # Exit a parse tree produced by lunaParser#fieldDeclaration.
+    def exitFieldDeclaration(self, ctx:lunaParser.FieldDeclarationContext):
+        pass
+
+
+    # Enter a parse tree produced by lunaParser#interfaceDeclaration.
+    def enterInterfaceDeclaration(self, ctx:lunaParser.InterfaceDeclarationContext):
+        pass
+
+    # Exit a parse tree produced by lunaParser#interfaceDeclaration.
+    def exitInterfaceDeclaration(self, ctx:lunaParser.InterfaceDeclarationContext):
+        pass
+
+
+    # Enter a parse tree produced by lunaParser#memoryDeclaration.
+    def enterMemoryDeclaration(self, ctx:lunaParser.MemoryDeclarationContext):
+        pass
+
+    # Exit a parse tree produced by lunaParser#memoryDeclaration.
+    def exitMemoryDeclaration(self, ctx:lunaParser.MemoryDeclarationContext):
         pass
 
 
