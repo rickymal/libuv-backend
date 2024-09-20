@@ -29,6 +29,21 @@ class lunaInterpreter(lunaVisitor):
         else:
             print("Declaração não reconhecida.")
 
+
+    def visitOperationStatement(self, ctx: lunaParser.OperationStatementContext):
+        if ctx.ifStatement():
+            self.visit(ctx.ifStatement())
+        elif ctx.whileStatement():
+            self.visit(ctx.whileStatement())
+        elif ctx.forStatement():
+            self.visit(ctx.forStatement())
+        elif ctx.breakStatement():
+            self.visit(ctx.breakStatement())
+        elif ctx.continueStatement():
+            self.visit(ctx.continueStatement())
+        else:
+            print("Operação não reconhecida.")
+
     def visitWordWithParameter(self, ctx: lunaParser.WordWithParameterContext):
         function_name = ctx.WORD().getText()
         if function_name == 'print':
@@ -99,5 +114,37 @@ class lunaInterpreter(lunaVisitor):
         var_name = ctx.WORD().getText()
         self.variables[var_name] = None
 
-    # Implemente outros métodos conforme necessário
+
+    def visitIfStatement(self, ctx: lunaParser.IfStatementContext):
+        condition = self.visit(ctx.conditionExpression)
+        if condition:
+            self.visit(ctx.block(0))
+        elif ctx.block(1):
+            self.visit(ctx.block(2))
+
+
+    def visitConditionExpression(self, ctx: lunaParser.ConditionExpressionContext):
+        left = self.visit(ctx.expression(0))
+        operator = ctx.getChild(1).getText()
+        right = self.visit(ctx.expression(1))
+        if operator == '<':
+            return left < right
+        elif operator == '>':
+            return left > right
+        elif operator == '<=':
+            return left <= right
+        elif operator == '>=':
+            return left >= right
+        elif operator == '==':
+            return left == right
+        elif operator == '!=':
+            return left != right
+        else:
+            print(f"Operador de condição '{operator}' não implementado.")
+            return False
+        
+    def visitBlock(self, ctx: lunaParser.BlockContext):
+        for statement in ctx.statement():
+            self.visit(statement)
+
 
