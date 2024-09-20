@@ -1,4 +1,4 @@
-# Generated from luna.g4 by ANTLR 4.9.2
+# Generated from luna.g4 by ANTLR 4.9.3
 # encoding: utf-8
 from antlr4 import *
 from io import StringIO
@@ -7,6 +7,7 @@ if sys.version_info[1] > 5:
 	from typing import TextIO
 else:
 	from typing.io import TextIO
+
 
 def serializedATN():
     with StringIO() as buf:
@@ -289,9 +290,10 @@ class lunaParser ( Parser ):
 
     def __init__(self, input:TokenStream, output:TextIO = sys.stdout):
         super().__init__(input, output)
-        self.checkVersion("4.9.2")
+        self.checkVersion("4.9.3")
         self._interp = ParserATNSimulator(self, self.atn, self.decisionsToDFA, self.sharedContextCache)
         self._predicates = None
+
 
 
 
@@ -359,6 +361,7 @@ class lunaParser ( Parser ):
             self.exitRule()
         return localctx
 
+
     class TypeModifierContext(ParserRuleContext):
         __slots__ = 'parser'
 
@@ -408,6 +411,7 @@ class lunaParser ( Parser ):
         finally:
             self.exitRule()
         return localctx
+
 
     class AllocatorSizeContext(ParserRuleContext):
         __slots__ = 'parser'
@@ -460,6 +464,7 @@ class lunaParser ( Parser ):
         finally:
             self.exitRule()
         return localctx
+
 
     class ElementLiteralContext(ParserRuleContext):
         __slots__ = 'parser'
@@ -525,6 +530,7 @@ class lunaParser ( Parser ):
         finally:
             self.exitRule()
         return localctx
+
 
     class ObjectLiteralContext(ParserRuleContext):
         __slots__ = 'parser'
@@ -598,6 +604,7 @@ class lunaParser ( Parser ):
         finally:
             self.exitRule()
         return localctx
+
 
     class ExpressionContext(ParserRuleContext):
         __slots__ = 'parser'
@@ -723,6 +730,7 @@ class lunaParser ( Parser ):
             self.unrollRecursionContexts(_parentctx)
         return localctx
 
+
     class PrimaryExpressionContext(ParserRuleContext):
         __slots__ = 'parser'
 
@@ -838,6 +846,7 @@ class lunaParser ( Parser ):
             self.unrollRecursionContexts(_parentctx)
         return localctx
 
+
     class AtomContext(ParserRuleContext):
         __slots__ = 'parser'
 
@@ -921,6 +930,7 @@ class lunaParser ( Parser ):
             self.exitRule()
         return localctx
 
+
     class MemoryAllocationContext(ParserRuleContext):
         __slots__ = 'parser'
 
@@ -1001,6 +1011,7 @@ class lunaParser ( Parser ):
         finally:
             self.exitRule()
         return localctx
+
 
     class FunctionDeclarationContext(ParserRuleContext):
         __slots__ = 'parser'
@@ -1110,6 +1121,7 @@ class lunaParser ( Parser ):
             self.exitRule()
         return localctx
 
+
     class AnonymysFunctionDeclarationContext(ParserRuleContext):
         __slots__ = 'parser'
 
@@ -1205,6 +1217,7 @@ class lunaParser ( Parser ):
             self.exitRule()
         return localctx
 
+
     class WordWithParameterContext(ParserRuleContext):
         __slots__ = 'parser'
 
@@ -1291,6 +1304,7 @@ class lunaParser ( Parser ):
             self.exitRule()
         return localctx
 
+
     class ConditionExpressionContext(ParserRuleContext):
         __slots__ = 'parser'
 
@@ -1358,6 +1372,7 @@ class lunaParser ( Parser ):
         finally:
             self.exitRule()
         return localctx
+
 
     class IfStatementContext(ParserRuleContext):
         __slots__ = 'parser'
@@ -1428,6 +1443,7 @@ class lunaParser ( Parser ):
             self.exitRule()
         return localctx
 
+
     class WhileStatementContext(ParserRuleContext):
         __slots__ = 'parser'
 
@@ -1482,6 +1498,7 @@ class lunaParser ( Parser ):
         finally:
             self.exitRule()
         return localctx
+
 
     class AssignmentStatementContext(ParserRuleContext):
         __slots__ = 'parser'
@@ -1545,6 +1562,7 @@ class lunaParser ( Parser ):
         finally:
             self.exitRule()
         return localctx
+
 
     class ForStatementContext(ParserRuleContext):
         __slots__ = 'parser'
@@ -1640,6 +1658,7 @@ class lunaParser ( Parser ):
             self.exitRule()
         return localctx
 
+
     class ReturnCallContext(ParserRuleContext):
         __slots__ = 'parser'
 
@@ -1704,6 +1723,7 @@ class lunaParser ( Parser ):
             self.exitRule()
         return localctx
 
+
     class BreakStatementContext(ParserRuleContext):
         __slots__ = 'parser'
 
@@ -1750,6 +1770,7 @@ class lunaParser ( Parser ):
             self.exitRule()
         return localctx
 
+
     class ContinueStatementContext(ParserRuleContext):
         __slots__ = 'parser'
 
@@ -1795,6 +1816,7 @@ class lunaParser ( Parser ):
         finally:
             self.exitRule()
         return localctx
+
 
     class ParametersContext(ParserRuleContext):
         __slots__ = 'parser'
@@ -1859,6 +1881,7 @@ class lunaParser ( Parser ):
             self.exitRule()
         return localctx
 
+
     class ParameterContext(ParserRuleContext):
         __slots__ = 'parser'
 
@@ -1917,6 +1940,7 @@ class lunaParser ( Parser ):
         finally:
             self.exitRule()
         return localctx
+
 
     class ModifierContext(ParserRuleContext):
         __slots__ = 'parser'
@@ -1980,6 +2004,7 @@ class lunaParser ( Parser ):
         finally:
             self.exitRule()
         return localctx
+
 
     class TypeSpecContext(ParserRuleContext):
         __slots__ = 'parser'
@@ -2083,6 +2108,7 @@ class lunaParser ( Parser ):
             self.exitRule()
         return localctx
 
+
     class TypeParametersContext(ParserRuleContext):
         __slots__ = 'parser'
 
@@ -2146,6 +2172,7 @@ class lunaParser ( Parser ):
             self.exitRule()
         return localctx
 
+
     class BlockContext(ParserRuleContext):
         __slots__ = 'parser'
 
@@ -2208,6 +2235,7 @@ class lunaParser ( Parser ):
         finally:
             self.exitRule()
         return localctx
+
 
     class OperationStatementContext(ParserRuleContext):
         __slots__ = 'parser'
@@ -2300,6 +2328,7 @@ class lunaParser ( Parser ):
             self.exitRule()
         return localctx
 
+
     class TypeDeclarationContext(ParserRuleContext):
         __slots__ = 'parser'
 
@@ -2380,6 +2409,7 @@ class lunaParser ( Parser ):
             self.exitRule()
         return localctx
 
+
     class FieldDeclarationContext(ParserRuleContext):
         __slots__ = 'parser'
 
@@ -2441,6 +2471,7 @@ class lunaParser ( Parser ):
             self.exitRule()
         return localctx
 
+
     class InterfaceDeclarationContext(ParserRuleContext):
         __slots__ = 'parser'
 
@@ -2500,6 +2531,7 @@ class lunaParser ( Parser ):
         finally:
             self.exitRule()
         return localctx
+
 
     class MemoryDeclarationContext(ParserRuleContext):
         __slots__ = 'parser'
@@ -2561,6 +2593,7 @@ class lunaParser ( Parser ):
         finally:
             self.exitRule()
         return localctx
+
 
     class StatementContext(ParserRuleContext):
         __slots__ = 'parser'

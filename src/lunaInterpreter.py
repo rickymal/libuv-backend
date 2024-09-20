@@ -116,7 +116,7 @@ class lunaInterpreter(lunaVisitor):
 
 
     def visitIfStatement(self, ctx: lunaParser.IfStatementContext):
-        condition = self.visit(ctx.conditionExpression)
+        condition = self.visit(ctx.conditionExpression())
         if condition:
             self.visit(ctx.block(0))
         elif ctx.block(1):
