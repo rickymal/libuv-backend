@@ -30,18 +30,26 @@
 // $antlr-format alignTrailingComments true, columnLimit 150, minEmptyLines 1, maxEmptyLinesToKeep 1, reflowComments false, useTab false
 // $antlr-format allowShortRulesOnASingleLine false, allowShortBlocksOnASingleLine true, alignSemicolons hanging, alignColons hanging
 
-parser grammar luna;
+parser grammar lunaParser;
 
 // Insert here @header for C++ parser.
 
 options {
     tokenVocab = lunaLexer;
-    // superClass = GoParserBase;
+    superClass = GoParserBase;
 }
+
+
+// core logic
+
+sourceFile
+    : packageClause eos (importDecl eos)* ((functionDecl | methodDecl | declaration | xmlBlock) eos)* EOF
+    ;
+    
 
 // xml parsing
 xmlBlock
-    : LT WORD xmlAttributes? GT xmlContent? LT SLASH WORD GT
+    : LESS WORD xmlAttributes? GREATER WORD LESS DIV WORD GREATER
     ;
 
 xmlAttributes
@@ -49,13 +57,13 @@ xmlAttributes
     ;
 
 xmlAttribute
-    : WORD EQUAL attributeValue
+    : WORD ASSIGN attributeValue
     ;
 
 attributeValue
     : L_BRACKET WORD R_BRACKET  // Array
     | L_CURLY pairList R_CURLY  // Object-like structure
-    | LT WORD GT  // Nested XML
+    | LESS WORD GREATER  // Nested XML
     ;
 
 pairList
@@ -66,15 +74,7 @@ pair
     : WORD COLON STRING
     ;
 
-xmlContent
-    : (.)*?   // Conteúdo até encontrar o fechamento da tag
-    ;
 
-// core logic
-
-sourceFile
-    : packageClause eos (importDecl eos)* ((functionDecl | methodDecl | declaration) eos)* EOF
-    ;
 
 packageClause
     : PACKAGE packageName = IDENTIFIER
@@ -96,7 +96,6 @@ declaration
     : constDecl
     | typeDecl
     | varDecl
-    | xmlBlock
     ;
 
 constDecl
@@ -175,7 +174,7 @@ block
     ;
 
 statementList
-    : ((SEMI? | EOS? | {this.closingBracket()}?) statement eos)+
+    : ((SEMI? | EOS? |{this.closingBracket()}? ) statement eos)+
     ;
 
 statement

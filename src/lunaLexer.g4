@@ -69,12 +69,6 @@ IMPORT      : 'import';
 RETURN      : 'return' -> mode(NLSEMI);
 VAR         : 'var';
 
-// Define tokens for XML-like syntax
-LT: LESS;       // <
-GT: GREATER;       // >
-SLASH: DIV;    // /
-EQUAL: ASSIGN;    // =
-
 // Define tokens for identifiers and strings
 WORD: [a-zA-Z_][a-zA-Z_0-9]*;
 STRING: '"' .*? '"';  // String literal between double quotes
