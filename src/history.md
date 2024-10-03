@@ -178,3 +178,152 @@
  2071  history
 rickymal@rickymal-550XDA:~/Área de trabalho/aurora-lang/src$ 
 
+
+
+ 1954  java -cp .:/usr/local/lib/antlr-4.9.3-complete.jar org.antlr.v4.gui.TestRig luna xmlBlock -tree ship-calculus/basic.luna 
+ 1955  clear
+ 1956  parser luna.g4 
+ 1957  clear
+ 1958  alias
+ 1959  java -cp /usr/local/lib/antlr-4.9.3-complete.jar luna.g4
+ 1960  history
+ 1961  clear
+ 1962  java -jar /usr/local/lib/antlr-4.9.3-complete.jar -visitor lunau
+ 1963  java -jar /usr/local/lib/antlr-4.9.3-complete.jar -visitor luna.g4
+ 1964  java -jar /usr/local/lib/antlr-4.9.3-complete.jar -visitor lunaParser.g4 
+ 1965  java -jar /usr/local/lib/antlr-4.9.3-complete.jar -visitor lunaLexer.g4 
+ 1966  java -jar /usr/local/lib/antlr-4.9.3-complete.jar -visitor lunaParser.g4 
+ 1967  java -cp .:/usr/local/lib/antlr-4.9.3-complete.jar org.antlr.v4.gui.TestRig luna sourceFile -tokens ship-calculus/basic.luna 
+ 1968  java -cp .:/usr/local/lib/antlr-4.9.3-complete.jar org.antlr.v4.gui.TestRig lunaParser sourceFile -tokens ship-calculus/basic.luna 
+ 1969  java -cp .:/usr/local/lib/antlr-4.9.3-complete.jar org.antlr.v4.gui.TestRig lunaParse sourceFile -tokens ship-calculus/basic.luna 
+ 1970  java -cp ".:/usr/local/lib/antlr-4.9.3-complete.jar" org.antlr.v4.gui.TestRig lunaParse sourceFile -tokens ship-calculus/basic.luna 
+ 1971  java -cp /usr/local/lib/antlr-4.9.3-complete.jar org.antlr.v4.gui.TestRig lunaParse sourceFile -tokens ship-calculus/basic.luna 
+ 1972  java -cp .  org.antlr.v4.gui.TestRig lunaParse sourceFile -tokens ship-calculus/basic.luna 
+ 1973  java -cp /usr/local/lib/antlr-4.9.3-complete.jar org.antlr.v4.gui.TestRig lunaParse sourceFile -tokens ship-calculus/basic.luna 
+ 1974  java -cp /usr/local/lib/antlr-4.9.3-complete.jar org.antlr.v4.gui.TestRig lunaParfdfdsfsse sourceFile -tokens ship-calculus/basic.luna 
+ 1975  java -jar /usr/local/lib/antlr-4.9.3-complete.jar -o /dist lunaLexer.g4 
+ 1976  java -jar /usr/local/lib/antlr-4.9.3-complete.jar -o dist lunaLexer.g4 
+ 1977  java -jar /usr/local/lib/antlr-4.9.3-complete.jar -o dist lunaParser.g4 
+ 1978  java -jar ./dist/lunaParser.java
+ 1979  java -cp ./dist/lunaParser.java
+ 1980  java -cp ./dist/lunaParser.java -tree
+ 1981  java -cp "./dist/lunaParser.java -tree"
+ 1982  clear
+ 1983  parser lunaParser.g4 
+ 1984  javac *.java
+ 1985  clear
+ 1986  parser -visitor lunaParser.g4 
+ 1987  parser -visitor -o /dist lunaParser.g4 
+ 1988  parser -visitor -o /dist lunaLexer.g4 
+ 1989  parser
+ 1990  parser lunaLexer.g4 
+ 1991  parser -visitor -o /dist lunaParser.g4 
+ 1992  j
+ 1993  alias
+ 1994  java -cp .:/usr/local/lib/antlr-4.9.3-complete.jar 
+ 1995  java -cp .:/usr/local/lib/antlr-4.9.3-complete.jar -o dist lunaParser.g4 
+ 1996  java -jar .:/usr/local/lib/antlr-4.9.3-complete.jar -o dist lunaParser.g4 
+ 1997  exit
+ 1998  sudo java -jar antlrworks-1.5.2-complete.jar 
+ 1999  clear
+ 2000  code .
+ 2001  clear
+ 2002  alias
+ 2003  parser --helpo
+ 2004  parser --help
+ 2005  parser --h
+ 2006  parser -g
+ 2007  parser -h
+ 2008  parsere
+ 2009  parser
+ 2010  cd sr
+ 2011  cd src/
+ 2012  parser lunaLexer.g4 
+ 2013  parser lunaParser.g4 
+ 2014  ls
+ 2015  ls -la
+ 2016  java -jar lunaParser.java
+ 2017  java -cp . lunaParser.java
+ 2018  clear
+ 2019  alias
+ 2020  javac lunaParser*.java
+ 2021  javac luna*.java
+ 2022  clear
+ 2023  parser lunaParser.g4 
+ 2024  javac luna*.java
+ 2025  grun lunaParser sourceFile -tree
+ 2026  grun luna sourceFile -tree
+ 2027  clear
+ 2028  grun luna sourceFile -gui ship-calculus/basic.luna 
+ 2029  clear
+ 2030  grun luna sourceFile -gui ship-calculus/basic.luna 
+ 2031  grun luna sourceFile -gui ship-calculus/main.go 
+ 2032  parser lunaParser
+ 2033  parser lunaParser.g4 
+ 2034  clear
+ 2035  parser lunaParser.g4 
+ 2036  clear
+ 2037  parser lunaParser.g4 
+ 2038  clear
+ 2039  parser lunaParser.g4 
+ 2040  clear
+ 2041  parser lunaParser.g4 
+ 2042  javac luna*.java
+ 2043  clear
+ 2044  parser lunaParser.g4 
+ 2045  clear
+ 2046  javac luna*.java
+ 2047  javac luna*.javaclear
+ 2048  clear
+ 2049  javac -cp .:java luna*.java
+ 2050  javac -cp .:java/luna*.java
+ 2051  javac -cp .:java/ luna*.java
+ 2052  clear
+ 2053  javac -cp .:java/ luna*.java
+ 2054  javac luna*.java
+ 2055  clear
+ 2056  parser lunaParser.g4 
+ 2057  parser lunaLexer.g4 
+ 2058  clear
+ 2059  parser lunaLexer.g4 
+ 2060  javac luna*.java
+ 2061  clear
+ 2062  javac -cp .:/usr/local/lib/antlr-4.9.3-complete.jar:java/ luna*.java
+ 2063  clear
+ 2064  javac -cp .:/usr/local/lib/antlr-4.9.3-complete.jar:java/ luna*.java
+ 2065  grun luna sourceFile -gui ship-calculus/main.go 
+ 2066  clear
+ 2067  java -cp .:/usr/local/lib/antlr-4.9.3-complete.jar:java/ org.antlr.v4.gui.TestRig luna sourceFile -tree 
+ 2068  cler
+ 2069  clear
+ 2070  java -cp .:/usr/local/lib/antlr-4.9.3-complete.jar:java/ org.antlr.v4.gui.TestRig luna sourceFile -tree ship-calculus/main.go 
+ 2071  history
+ 2072  clear
+ 2073  parser lunaLexer.g4 lunaParser.g4 
+ 2074  parser lunaLexer.g4
+ 2075  clear
+ 2076  parser lunaLexer.g4
+ 2077  parser lunaParser.g4 
+ 2078  clear
+ 2079  parser lunaParser.g4 
+ 2080  clear
+ 2081  javac luna*.java
+ 2082  clear
+ 2083  grun luna sourceFile -tree ship-calculus/main.go 
+ 2084  grun luna sourceFile -gui ship-calculus/main.go 
+ 2085  grun luna sourceFile -tree ship-calculus/computation.luna 
+ 2086  clear
+ 2087  grun luna sourceFile -tree ship-calculus/computation.luna 
+ 2088  clear
+ 2089  parser lunaLexer.
+ 2090  parser lunaLexer.g4 
+ 2091  parser lunaParser.g4 
+ 2092  clear
+ 2093  javac luna*.java
+ 2094  grun luna sourceFile -tree ship-calculus/computation.luna 
+ 2095  grun luna sourceFile -tree ship-calculus/main.go 
+ 2096  grun luna sourceFile -tree ship-calculus/computation.luna 
+ 2097  history
+rickymal@rickymal-550XDA:~/Área de trabalho/aurora-lang/src$ 
+
+

@@ -58,10 +58,14 @@ class Lexer:
         get_token = re.compile(token_regex).match
         pos = 0
         tokens = []
+        import pdb
+        # pdb.set_trace()
         while pos < len(text):
             match = get_token(text, pos)
+            print("Match: {}".format(match))
             if match:
                 kind = match.lastgroup
+                print("kind: {}".format(kind))
                 value = match.group(kind)
                 if kind == 'NUMBER':
                     value = float(value)
@@ -72,6 +76,9 @@ class Lexer:
                 pos = match.end()
             else:
                 raise SyntaxError(f'Caractere inesperado "{text[pos]}" em posição {pos}')
+            
+            self.next()
+
         tokens.append(('EOF', ''))
         return tokens
     

@@ -1,3 +1,4 @@
+<?xml version="1.0"?>
 <code>
     package main
     <wolfram.Math instance=[Ship] anotherParameter={name: "Henrique"} thirdParameter=<anotherXmlThing></anotherXmlThing>>
