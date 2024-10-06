@@ -36,16 +36,6 @@ lexer grammar lunaLexer;
 
 // Default "mode": Everything OUTSIDE of a tag
 
-ID1
-    : [a-zA-Z_À-ÿ][a-zA-Z_0-9À-ÿ]* ('.' [a-zA-Z_À-ÿ][a-zA-Z_0-9À-ÿ]*)*
-    ;
-
-ID2
-    : '[' ID1 (',' ID1)*?
-    | '{' ID1 ':' STRING '}'
-    | ID1
-    ;
-
 
 COMMENT : '<!--' .*? '-->';
 CDATA   : '<![CDATA[' .*? ']]>';
@@ -53,13 +43,13 @@ CDATA   : '<![CDATA[' .*? ']]>';
  *  and Notation Declarations <!NOTATION ...>
  */
 DTD       : '<!' .*? '>' -> skip;
-EntityRef : '&' Name ';';
+EntityRef : '&' Id1 ';';
 CharRef   : '&#' DIGIT+ ';' | '&#x' HEXDIGIT+ ';';
 SEA_WS    : (' ' | '\t' | '\r'? '\n')+;
 
 OPEN         : '<'       -> pushMode(INSIDE);
 XMLDeclOpen  : '<?xml' S -> pushMode(INSIDE);
-SPECIAL_OPEN : '<?' Name -> more, pushMode(PROC_INSTR);
+SPECIAL_OPEN : '<?' Id1 -> more, pushMode(PROC_INSTR);
 
 TEXT: ~[<&]+; // match any 16 bit char other than < and &
 
@@ -71,32 +61,24 @@ SPECIAL_CLOSE : '?>' -> popMode; // close <?xml...?>
 SLASH_CLOSE   : '/>' -> popMode;
 SLASH         : '/';
 EQUALS        : '=';
-STRING        : '"' ~[<"]* '"' | '\'' ~[<']* '\'';
-Name          : NameStartChar NameChar*;
+
 S             : [ \t\r\n] -> skip;
+Id1
+    : [a-zA-Z_À-ÿ][a-zA-Z_0-9À-ÿ]* ('.' [a-zA-Z_À-ÿ][a-zA-Z_0-9À-ÿ]*)*
+    ;
+Id2
+    : STRING
+    | Id1                        // Identificador simples
+    | '[' Id1 (',' Id1)* ']'      // Lista de identificadores
+    | '{' Id1 ':' STRING '}'     // Objeto chave-valor
+                  // String simples
+    ;
+
+STRING        : '"' ~[<"]* '"' | '\'' ~[<']* '\'';   
 
 fragment HEXDIGIT: [a-fA-F0-9];
 
 fragment DIGIT: [0-9];
-
-fragment NameChar:
-    NameStartChar
-    | '-'
-    | '.'
-    | DIGIT
-    | '\u00B7'
-    | '\u0300' ..'\u036F'
-    | '\u203F' ..'\u2040'
-;
-
-fragment NameStartChar:
-    [_:a-zA-Z]
-    | '\u2070' ..'\u218F'
-    | '\u2C00' ..'\u2FEF'
-    | '\u3001' ..'\uD7FF'
-    | '\uF900' ..'\uFDCF'
-    | '\uFDF0' ..'\uFFFD'
-;
 
 // ----------------- Handle <? ... ?> ---------------------
 mode PROC_INSTR;

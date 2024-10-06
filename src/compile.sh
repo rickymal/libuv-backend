@@ -18,4 +18,4 @@ echo '--------------------------- Compiling luna --------------------------'
 javac -d dist/ dist/luna*.java  # Certifique-se de compilar e gerar .class dentro de 'dist/'
 
 echo '--------------------------- Obtaining tree and token --------------------------'
-grun luna document -tree -tokens ./ship-calculus/computation.xml
+grun luna document -gui -tokens -tree ./ship-calculus/computation.xml

@@ -38,7 +38,8 @@ options {
 }
 
 document
-    : prolog? misc* element misc* EOF
+    : (prolog | element)* EOF
+    // : prolog? misc* element misc* EOF
     ;
 
 prolog
@@ -49,9 +50,10 @@ content
     : chardata? ((element | reference | CDATA | PI | COMMENT) chardata?)*
     ;
 
+// Id1 = [a-zA-Z_À-ÿ][a-zA-Z_0-9À-ÿ]* ('.' [a-zA-Z_À-ÿ][a-zA-Z_0-9À-ÿ]*)*
 element
-    : '<' Name attribute* '>' content '<' '/' Name '>'
-    | '<' Name attribute* '/>'
+    : '<' Id1 attribute* '>' content '<' '/' Id1 '>'
+    | '<' Id1 attribute* '/>'
     ;
 
 reference
@@ -60,9 +62,8 @@ reference
     ;
 
 attribute
-    : Name '=' ID2
-    | Name '=' STRING  
-    ; // Our STRING is AttValue in spec
+    : Id1 '=' Id2  // Modificado para aceitar attributeValue
+    ;
 
 /** ``All text that is not markup constitutes the character data of
  *  the document.''

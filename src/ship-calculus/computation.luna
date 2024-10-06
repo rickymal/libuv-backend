@@ -1,6 +1,6 @@
 <code>
     package main
-    <wolfram.Math instance=[Ship] anotherParameter={name: "Henrique"} thirdParameter=<anotherXmlThing></anotherXmlThing>>
+    <wolfram.Math instance=[Ship, Algo] anotherParameter={name: "Henrique"} thirdParameter=<anotherXmlThing></anotherXmlThing>>
         resistance(v) = a1 * v ** 2 where v <= v_critical;
         resistance(v) = a2 * v + a3 otherwise;
         linhaDagua = f(deslocamento);
