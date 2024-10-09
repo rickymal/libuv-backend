@@ -34,24 +34,35 @@
 
 lexer grammar lunaLexer;
 
+
+
+
 // Default "mode": Everything OUTSIDE of a tag
-
-
-COMMENT : '<!--' .*? '-->';
-CDATA   : '<![CDATA[' .*? ']]>';
+// COMMENT : '<!--' .*? '-->';
+// CDATA   : '<![CDATA[' .*? ']]>';
 /** Scarf all DTD stuff, Entity Declarations like <!ENTITY ...>,
  *  and Notation Declarations <!NOTATION ...>
  */
-DTD       : '<!' .*? '>' -> skip;
-EntityRef : '&' Id1 ';';
-CharRef   : '&#' DIGIT+ ';' | '&#x' HEXDIGIT+ ';';
-SEA_WS    : (' ' | '\t' | '\r'? '\n')+;
+// DTD       : '<!' .*? '>' -> skip;
+// EntityRef : '&' Id3 ';';
+// CharRef   : '&#' DIGIT+ ';' | '&#x' HEXDIGIT+ ';';
+// SEA_WS    : (' ' | '\t' | '\r'? '\n')+;
 
 OPEN         : '<'       -> pushMode(INSIDE);
-XMLDeclOpen  : '<?xml' S -> pushMode(INSIDE);
-SPECIAL_OPEN : '<?' Id1 -> more, pushMode(PROC_INSTR);
+// XMLDeclOpen  : '<?xml' S -> pushMode(INSIDE);
+// SPECIAL_OPEN : '<?' Id3 -> more, pushMode(PROC_INSTR);
 
-TEXT: ~[<&]+; // match any 16 bit char other than < and &
+Id3
+    : [a-zA-Z][a-zA-Z] ('.' [a-zA-Z][a-zA-Z]*)*?
+    ;
+Id4
+    : STRING
+    | Id1                        // Identificador simples
+    | '[' Id1 (',' Id1)* ']'      // Lista de identificadores
+    | '{' Id1 ':' STRING '}'     // Objeto chave-valor
+    | OPEN
+                  // String simples
+    ;
 
 // ----------------- Everything INSIDE of a tag ---------------------
 mode INSIDE;
@@ -61,24 +72,31 @@ SPECIAL_CLOSE : '?>' -> popMode; // close <?xml...?>
 SLASH_CLOSE   : '/>' -> popMode;
 SLASH         : '/';
 EQUALS        : '=';
-
+// Name          : Id1 ;
 S             : [ \t\r\n] -> skip;
 Id1
-    : [a-zA-Z_À-ÿ][a-zA-Z_0-9À-ÿ]* ('.' [a-zA-Z_À-ÿ][a-zA-Z_0-9À-ÿ]*)*
+    // : [a-zA-Z]* ('.' [a-zA-Z]*)*? [a-zA-Z]+(\.[a-zA-Z]+)*
+    : [a-zA-Z_][a-zA-Z_0-9]* ('.' [a-zA-Z_][a-zA-Z_0-9]*)*
     ;
 Id2
     : STRING
     | Id1                        // Identificador simples
     | '[' Id1 (',' Id1)* ']'      // Lista de identificadores
     | '{' Id1 ':' STRING '}'     // Objeto chave-valor
+    | OPEN
                   // String simples
     ;
 
-STRING        : '"' ~[<"]* '"' | '\'' ~[<']* '\'';   
+STRING        : '"' ~[<"]* '"' | '\'' ~[<']* '\'';
+
+// STRING        : '"' ~[<"]* '"' | '\'' ~[<']* '\'';   
+
+
 
 fragment HEXDIGIT: [a-fA-F0-9];
 
 fragment DIGIT: [0-9];
+
 
 // ----------------- Handle <? ... ?> ---------------------
 mode PROC_INSTR;
