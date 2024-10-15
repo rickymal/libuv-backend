@@ -4,6 +4,7 @@ lexer grammar lunaLexer;
 OPEN: '<' -> pushMode(INSIDE);
 TEXT: ~[<]+; // Match any text except '<'
 
+S: [ \t\r\n]+ -> skip; // Skip whitespace
 // Mode for inside a tag
 mode INSIDE;
 OPEN_: OPEN -> pushMode(INSIDE);
@@ -20,4 +21,4 @@ COMMA: ',';
 OPEN_BRACE: '{';
 CLOSE_BRACE: '}';
 COLON: ':';
-S: [ \t\r\n]+ -> skip; // Skip whitespace
+S_: S -> skip; // Skip whitespace

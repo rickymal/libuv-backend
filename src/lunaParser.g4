@@ -9,8 +9,10 @@ document: element+ EOF;
 
 // Elements
 // element: OPEN id1 attributes? CLOSE content* endTag;
-element: OPEN id1 attributes CLOSE content* endTag;
+tagElementOpen: (OPEN | OPEN_) id1 attributes CLOSE;
+tagElementClose: (OPEN | OPEN_) '/' id1 attributes CLOSE;
 
+element: tagElementOpen content*? tagElementClose;
 // Content between tags
 content: TEXT | element;
 
