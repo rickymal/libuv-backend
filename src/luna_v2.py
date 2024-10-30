@@ -10,6 +10,7 @@ class Propagation(Enum):
     PROPAGATE_TO_CHILD_NODES = 2
     PROPAGATE_TO_FATHER_NODES = 3
     GLOBAL = 4
+    REPLACE = 5
 
 letter_pattern = '[a-zA-Z_À-ÿ]'
 digit_pattern = '[0-9]'
@@ -112,6 +113,11 @@ close_element = ExactValue(name='CLOSE_ELEMENT', value='>').compose()
 slash = ExactValue(name='SLASH', value='/').compose()
 identifier = ClassicRegex(name='IDENTIFIER', value=f'{letter_pattern}{letter_or_digit}*').compose()
 q_identifier = ClassicRegex(name='Q_IDENTIFIER', value=f'{letter_pattern}{letter_or_digit}*(?:\\.{letter_pattern}{letter_or_digit}*)*').compose()
+comment = ClassicRegex(name='COMMENT', value=f'\# .* [\r\n]', channel = 'hidden').compose() # [TODO] Corrigir a regex, o mode é para jogar para uma 'dimensão chamado 'mode comment', só parser nessa dimensão conseguirão ler
+no_value_tokens_complete = ClassicRegex(name='NO_VALUE_TOKEN', value=f'[\r\n\t ]', channel = 'hidden').compose() # [TODO] Corrigir a regex, o mode é para jogar para uma 'dimensão chamado 'mode comment', só parser nessa dimensão conseguirão ler
+no_value_tokens_without_space = ClassicRegex(name='NO_VALUE_TOKEN', value=f'[\r\n\t]', channel = 'hidden').compose() # [TODO] Corrigir a regex, o mode é para jogar para uma 'dimensão chamado 'mode comment', só parser nessa dimensão conseguirão ler
+
+
 
 # Define t_identifier first to use in xml_attribute
 def get_t_identifier():
@@ -129,78 +135,77 @@ vector = None
 object_ = None
 
 # Define Grammar Rules
-def build_grammar():
-    global program, vector, object_
+# VECTOR Rule
+vector = ANTLR4Like(name='VECTOR', value='&OPEN_BRACKET &Q_IDENTIFIER (&COMMA &Q_IDENTIFIER)* &CLOSE_BRACKET').compose(
+    values=[
+        open_bracket,
+        q_identifier,
+        ANTLR4Like(name='Q_IDENTIFIER_LIST', value='(&COMMA &Q_IDENTIFIER)*').compose(
+            values=[
+                ANTLR4Like(name='Q_IDENTIFIER_ITEM', value='&COMMA &Q_IDENTIFIER').compose(
+                    values=[comma, q_identifier]
+                )
+            ]
+        ),
+        close_bracket
+    ]
+)
 
-    # VECTOR Rule
-    vector = ANTLR4Like(name='VECTOR', value='&OPEN_BRACKET &Q_IDENTIFIER (&COMMA &Q_IDENTIFIER)* &CLOSE_BRACKET').compose(
-        values=[
-            open_bracket,
-            q_identifier,
-            ANTLR4Like(name='Q_IDENTIFIER_LIST', value='(&COMMA &Q_IDENTIFIER)*').compose(
-                values=[
-                    ANTLR4Like(name='Q_IDENTIFIER_ITEM', value='&COMMA &Q_IDENTIFIER').compose(
-                        values=[comma, q_identifier]
-                    )
-                ]
-            ),
-            close_bracket
-        ]
-    )
+# OBJECT Rule
+object_ = ANTLR4Like(name='OBJECT', value='&OPEN_KEY &Q_IDENTIFIER &TWO_DOTS &PROGRAM &CLOSE_KEY').compose(
+    values=[
+        open_key,
+        q_identifier,
+        two_dots,
+        lambda text: program.match(text),  # Recursive call to program
+        close_key
+    ]
+)
 
-    # OBJECT Rule
-    object_ = ANTLR4Like(name='OBJECT', value='&OPEN_KEY &Q_IDENTIFIER &TWO_DOTS &PROGRAM &CLOSE_KEY').compose(
-        values=[
-            open_key,
-            q_identifier,
-            two_dots,
-            lambda text: program.match(text),  # Recursive call to program
-            close_key
-        ]
-    )
+# T_IDENTIFIER Rule
+t_identifier = get_t_identifier()
 
-    # T_IDENTIFIER Rule
-    t_identifier = get_t_identifier()
+# XML_ATTRIBUTE Rule
+xml_attribute = ANTLR4Like(name='XML_ATTRIBUTE', value='&Q_IDENTIFIER &EQUALS &T_IDENTIFIER').compose(
+    values=[q_identifier, equals, t_identifier]
+)
 
-    # XML_ATTRIBUTE Rule
-    xml_attribute = ANTLR4Like(name='XML_ATTRIBUTE', value='&Q_IDENTIFIER &EQUALS &T_IDENTIFIER').compose(
-        values=[q_identifier, equals, t_identifier]
-    )
+# OPEN_TAG Rule
+open_tag = ANTLR4Like(name='OPEN_TAG', value='&OPEN_ELEMENT &Q_IDENTIFIER &XML_ATTRIBUTE* &CLOSE_ELEMENT').compose(
+    values=[
+        open_element,
+        q_identifier,
+        ANTLR4Like(name='XML_ATTRIBUTE_LIST', value='&XML_ATTRIBUTE*').compose(
+            values=[xml_attribute]
+        ),
+        close_element
+    ]
+)
 
-    # OPEN_TAG Rule
-    open_tag = ANTLR4Like(name='OPEN_TAG', value='&OPEN_ELEMENT &Q_IDENTIFIER &XML_ATTRIBUTE* &CLOSE_ELEMENT').compose(
-        values=[
-            open_element,
-            q_identifier,
-            ANTLR4Like(name='XML_ATTRIBUTE_LIST', value='&XML_ATTRIBUTE*').compose(
-                values=[xml_attribute]
-            ),
-            close_element
-        ]
-    )
+# CLOSE_TAG Rule
+close_tag = ANTLR4Like(name='CLOSE_TAG', value='&OPEN_ELEMENT &SLASH &Q_IDENTIFIER &CLOSE_ELEMENT').compose(
+    values=[open_element, slash, q_identifier, close_element]
+)
 
-    # CLOSE_TAG Rule
-    close_tag = ANTLR4Like(name='CLOSE_TAG', value='&OPEN_ELEMENT &SLASH &Q_IDENTIFIER &CLOSE_ELEMENT').compose(
-        values=[open_element, slash, q_identifier, close_element]
-    )
+# XML_STATEMENT Rule
+xml_statement = ANTLR4Like(name='XML_STATEMENT', value='&OPEN_TAG &PROGRAM &CLOSE_TAG').compose({
+    Propagation.ONLY_LOCAL: [open_tag, lambda text: program.match(text), close_tag],
+    Propagation.REPLACE: {
+        Propagation.ONLY_LOCAL: [no_value_tokens_complete, no_value_tokens_without_space]
+    },
 
-    # XML_STATEMENT Rule
-    xml_statement = ANTLR4Like(name='XML_STATEMENT', value='&OPEN_TAG &PROGRAM &CLOSE_TAG').compose(
-        values=[open_tag, lambda text: program.match(text), close_tag]
-    )
+})
 
-    # IMPORT_STATEMENT Rule
-    import_statement = ANTLR4Like(name='IMPORT_STATEMENT', value='&REQUIRE &IDENTIFIER').compose(
-        values=[require, identifier]
-    )
+# IMPORT_STATEMENT Rule
+import_statement = ANTLR4Like(name='IMPORT_STATEMENT', value='&REQUIRE &IDENTIFIER').compose(
+    values=[require, identifier]
+)
 
-    # PROGRAM Rule
-    program = ANTLR4Like(name='PROGRAM', value='(&XML_STATEMENT | &IMPORT_STATEMENT)').compose(
-        values=[xml_statement, import_statement],
-        
-    )
+# PROGRAM Rule
+program = ANTLR4Like(name='PROGRAM', value='(&XML_STATEMENT | &IMPORT_STATEMENT)').compose({
+    Propagation.ONLY_LOCAL: [xml_statement, import_statement, comment, no_value_tokens_complete],
 
-build_grammar()
+})
 
 
 
