@@ -1,6 +1,4 @@
-import re
-
-from lib import PatternMatcher, regex, regex_composer, skip_token
+from lib import PatternMatcher, regex, regex_composer, skip_token, Query
 
 def regex(ctx):
     # Implementação da transformação regex
@@ -77,3 +75,13 @@ attributes = PatternMatcher(
     transform=regex_composer
 )
 statementXML.register(attributes, context='local')
+
+
+code = """
+<code>
+    <wolfram.Math instance=[Ship, Algo] anotherParameter={name: "Henrique"} thirdParameter=<anotherXmlThing></anotherXmlThing>>
+    </wolfram.Math>
+</code>
+"""
+
+main.parse(code)

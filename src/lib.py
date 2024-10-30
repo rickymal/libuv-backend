@@ -41,6 +41,16 @@ class Visitor:
         for child in node.children:
             child.accept(self)
 
+
+class Prototype:
+    def __init__(self, *args, **kwargs):
+        self.args = args
+        self.kwargs = kwargs
+
+    def set(self, *args, **kwargs):
+        pass
+
+
 # Classe PatternMatcher para definir padrões e regras
 class PatternMatcher:
     def __init__(
@@ -56,7 +66,9 @@ class PatternMatcher:
         lookahead: int = 1,
         parent: 'PatternMatcher' = None,
         context: 'PatternMatcher' = None,
+        streaming_batch_size: int = 1000
     ):
+        self.streaming_batch_size = streaming_batch_size
         self.name = name
         self.value = value
         self.transform = transform
@@ -108,7 +120,7 @@ class PatternMatcher:
     def set_mode(self, mode: str):
         self.mode = mode
 
-    def replace(self, name: str, new_pattern: 'PatternMatcher'):
+    def replace(self, query: 'Query', new_pattern: 'PatternMatcher', context = 'global'):
         if name in self.patterns:
             self.patterns[name] = new_pattern
 
@@ -376,3 +388,35 @@ class Query:
     def __init__(self, pattern_matcher: str):
         self.pattern_matcher = pattern_matcher
 
+
+def regex(pattern_matcher: PatternMatcher):
+    # Compila o padrão regex diretamente
+    pattern_matcher.compiled_pattern = re.compile(pattern_matcher.value)
+
+def regex_composer(pattern_matcher: PatternMatcher):
+    # Substitui as referências pm:NAME pelos valores reais dos padrões correspondentes
+
+    def replace_pm(match):
+        pm_name = match.group(1)
+        pm = pattern_matcher.get_pattern(pm_name)
+        if pm:
+            if not pm.compiled_pattern:
+                pm.compile()
+            return f'({pm.value})'
+        else:
+            raise ValueError(f"Padrão '{pm_name}' não encontrado.")
+
+    # Substitui todas as ocorrências de pm:NAME
+    pattern_value = re.sub(r'pm:([A-Za-z_][A-Za-z0-9_]*)', replace_pm, pattern_matcher.value)
+
+    # Remove espaços extras
+    pattern_value = re.sub(r'\s+', '', pattern_value)
+
+    # Compila o padrão resultante
+    pattern_matcher.value = pattern_value  # Atualiza o valor do padrão
+    pattern_matcher.compiled_pattern = re.compile(pattern_value)
+
+def skip_token(pattern_matcher: PatternMatcher):
+    # Compila o padrão para tokens que devem ser ignorados
+    pattern_matcher.compiled_pattern = re.compile(pattern_matcher.value)
+    pattern_matcher.skip = True  # Marca o padrão para ser ignorado durante a análise
