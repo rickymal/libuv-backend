@@ -83,8 +83,35 @@ object = ANTLR4Like(name = 'OBJECT', value='&OPEN_KEY &Q_IDENTIFIER &TWO_DOT &PR
 
 
 program.compose(
-    extra_pattern_like_tokens, 
-    propagation = Propagation.PROPAGATE_TO_CHILD_NODES
+    propagation = {
+        Propagation.PROPAGATE_TO_CHILD_NODES: extra_pattern_like_tokens,
+    },
+    values = [
+        xml_statement.compose(
+            values = [
+                open_tag.compose(
+                    values = xml_attribute.compose(
+                        value = [
+                            t_identifier.compose(
+                            values = [
+                                vector.compose(),
+                                object.compose(),
+                                program.compose(),
+                            ]
+                        )
+                        ],
+                    ),
+                ),
+                close_tag.compose(),
+                program.compose(),
+            ],
+        ),
+        import_statement.compose(
+            values = [
+                require.compose(),
+            ]
+        ),
+    ]
 )
 
 code = """
