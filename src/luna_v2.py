@@ -3,55 +3,80 @@ import re
 from abc import ABC, abstractmethod
 from enum import Enum
 
-
-
-class Propagation(Enum):
+class Prototype:
     ONLY_LOCAL = 1
-    PROPAGATE_TO_CHILD_NODES = 2
-    PROPAGATE_TO_FATHER_NODES = 3
+    FORWARD = 2
+    BACKWARD = 3
     GLOBAL = 4
-    REPLACE = 5
+
+class PrototypeContext:
+    def __init__(self, name: str):
+        self.name = name
+        self.data = dict()
+        self.forward = None
+        self.backward = None
+
+    def get(key: str, default = None, propagation = Prototype.ONLY_LOCAL):
+        if propagation == Prototype.ONLY_LOCAL:
+            return self.data.get(key, default)
+        elif propagation == Prototype.FORWARD:
+            value = self.data.get(key, None)
+            if value is None:
+                return self.forward.get(key, default, propagation)
+            return value
+        else:
+            #[TODO] Implementar as outras opções
+        
+
+
+    
 
 letter_pattern = '[a-zA-Z_À-ÿ]'
 digit_pattern = '[0-9]'
 letter_or_digit = f'(?:{letter_pattern}|{digit_pattern})'
 
 # Base Parser Transformer Interface
-class IParserTransformer(ABC):
-    def __init__(self, name, value, *dim, **kdim):
-        self.name = name
-        self.value = value
+class IMicroInterpreter(ABC):
+
+    # [TODO] Pensar em como usar dim e kdim, a ideia é que eles representem dimensões
+    # Como se fosse outra dimensão do interpretador por exemplo
+    # Eu quero colocar comentários do código em uma dimensão separada
+    # Para que futuramente eu os use para uma segunda etapa de parsing para documentação por exemplo
+    def __init__(self, identifier, representation, *dim, **kdim):
+        self.identifier = identifier
+        self.representation = representation
         self.dim = dim
         self.kdim = kdim
         self.children = []
         self.tokens = []
+
+    def parse(self, text):
+        
+        pass
     
-    @abstractmethod
-    def compose(self, **kwargs):
+    def compose(self, context: list['IMicroInterpreter']):
+        
         pass
     
     @abstractmethod
     def match(self, text):
         pass
 
-    @abstractmethod
-    def match_many(self, text):
-        pass
 
-# Exact Value Matcher
-class ExactValue(IParserTransformer):
+# Exact representation Matcher
+class Exactrepresentation(IMicroInterpreter):
     def compose(self, **kwargs):
         return self
     
     def match(self, text):
-        if text.startswith(self.value):
-            return self.value, text[len(self.value):]
+        if text.startswith(self.representation):
+            return self.representation, text[len(self.representation):]
         return None, text
 
 # Regular Expression Matcher
-class ClassicRegex(IParserTransformer):
+class ClassicRegex(IMicroInterpreter):
     def compose(self, **kwargs):
-        self.pattern = re.compile(self.value)
+        self.pattern = re.compile(self.representation)
         return self
     
     def match(self, text):
@@ -61,9 +86,9 @@ class ClassicRegex(IParserTransformer):
         return None, text
 
 # ANTLR4-Like Grammar Parser
-class ANTLR4Like(IParserTransformer):
+class ANTLR4Like(IMicroInterpreter):
     def compose(self, **kwargs):
-        self.children = kwargs.get('values', [])
+        self.children = kwargs.get('representations', [])
         self.propagation = kwargs.get('propagation', {})
         # Propagate tokens if needed
         for prop_type, tokens in self.propagation.items():
@@ -84,45 +109,45 @@ class ANTLR4Like(IParserTransformer):
 
 # Additional Tokens and Grammar Rules
 extra_pattern_like_tokens = [
-    ExactValue(name='OPEN_ELEMENT', value='<'),
-    ExactValue(name='CLOSE_ELEMENT', value='>'),
-    ClassicRegex(name='DIGIT', value=digit_pattern),
-    ClassicRegex(name='IDENTIFIER', value=f'{letter_pattern}{letter_or_digit}*'),
-    ClassicRegex(name='Q_IDENTIFIER', value=f'{letter_pattern}{letter_or_digit}*(?:\\.{letter_pattern}{letter_or_digit}*)*'),
-    ExactValue(name='EQUALS', value='='),
-    ExactValue(name='OPEN_BRACKET', value='['),
-    ExactValue(name='CLOSE_BRACKET', value=']'),
-    ExactValue(name='SLASH', value='/'),
-    ExactValue(name='OPEN_KEY', value='{'),
-    ExactValue(name='CLOSE_KEY', value='}'),
-    ExactValue(name='TWO_DOTS', value=':'),
-    ExactValue(name='COMMA', value=','),
+    Exactrepresentation(identifier='OPEN_ELEMENT', representation='<'),
+    Exactrepresentation(identifier='CLOSE_ELEMENT', representation='>'),
+    ClassicRegex(identifier='DIGIT', representation=digit_pattern),
+    ClassicRegex(identifier='IDENTIFIER', representation=f'{letter_pattern}{letter_or_digit}*'),
+    ClassicRegex(identifier='Q_IDENTIFIER', representation=f'{letter_pattern}{letter_or_digit}*(?:\\.{letter_pattern}{letter_or_digit}*)*'),
+    Exactrepresentation(identifier='EQUALS', representation='='),
+    Exactrepresentation(identifier='OPEN_BRACKET', representation='['),
+    Exactrepresentation(identifier='CLOSE_BRACKET', representation=']'),
+    Exactrepresentation(identifier='SLASH', representation='/'),
+    Exactrepresentation(identifier='OPEN_KEY', representation='{'),
+    Exactrepresentation(identifier='CLOSE_KEY', representation='}'),
+    Exactrepresentation(identifier='TWO_DOTS', representation=':'),
+    Exactrepresentation(identifier='COMMA', representation=','),
 ]
 
 # Grammar Definitions
-require = ExactValue(name='REQUIRE', value='require').compose()
-comma = ExactValue(name='COMMA', value=',').compose()
-equals = ExactValue(name='EQUALS', value='=').compose()
-open_bracket = ExactValue(name='OPEN_BRACKET', value='[').compose()
-close_bracket = ExactValue(name='CLOSE_BRACKET', value=']').compose()
-open_key = ExactValue(name='OPEN_KEY', value='{').compose()
-close_key = ExactValue(name='CLOSE_KEY', value='}').compose()
-two_dots = ExactValue(name='TWO_DOTS', value=':').compose()
-open_element = ExactValue(name='OPEN_ELEMENT', value='<').compose()
-close_element = ExactValue(name='CLOSE_ELEMENT', value='>').compose()
-slash = ExactValue(name='SLASH', value='/').compose()
-identifier = ClassicRegex(name='IDENTIFIER', value=f'{letter_pattern}{letter_or_digit}*').compose()
-q_identifier = ClassicRegex(name='Q_IDENTIFIER', value=f'{letter_pattern}{letter_or_digit}*(?:\\.{letter_pattern}{letter_or_digit}*)*').compose()
-comment = ClassicRegex(name='COMMENT', value=f'\# .* [\r\n]', channel = 'hidden').compose() # [TODO] Corrigir a regex, o mode é para jogar para uma 'dimensão chamado 'mode comment', só parser nessa dimensão conseguirão ler
-no_value_tokens_complete = ClassicRegex(name='NO_VALUE_TOKEN', value=f'[\r\n\t ]', channel = 'hidden').compose() # [TODO] Corrigir a regex, o mode é para jogar para uma 'dimensão chamado 'mode comment', só parser nessa dimensão conseguirão ler
-no_value_tokens_without_space = ClassicRegex(name='NO_VALUE_TOKEN', value=f'[\r\n\t]', channel = 'hidden').compose() # [TODO] Corrigir a regex, o mode é para jogar para uma 'dimensão chamado 'mode comment', só parser nessa dimensão conseguirão ler
+require = Exactrepresentation(identifier='REQUIRE', representation='require').compose()
+comma = Exactrepresentation(identifier='COMMA', representation=',').compose()
+equals = Exactrepresentation(identifier='EQUALS', representation='=').compose()
+open_bracket = Exactrepresentation(identifier='OPEN_BRACKET', representation='[').compose()
+close_bracket = Exactrepresentation(identifier='CLOSE_BRACKET', representation=']').compose()
+open_key = Exactrepresentation(identifier='OPEN_KEY', representation='{').compose()
+close_key = Exactrepresentation(identifier='CLOSE_KEY', representation='}').compose()
+two_dots = Exactrepresentation(identifier='TWO_DOTS', representation=':').compose()
+open_element = Exactrepresentation(identifier='OPEN_ELEMENT', representation='<').compose()
+close_element = Exactrepresentation(identifier='CLOSE_ELEMENT', representation='>').compose()
+slash = Exactrepresentation(identifier='SLASH', representation='/').compose()
+identifier = ClassicRegex(identifier='IDENTIFIER', representation=f'{letter_pattern}{letter_or_digit}*').compose()
+q_identifier = ClassicRegex(identifier='Q_IDENTIFIER', representation=f'{letter_pattern}{letter_or_digit}*(?:\\.{letter_pattern}{letter_or_digit}*)*').compose()
+comment = ClassicRegex(identifier='COMMENT', representation=f'\# .* [\r\n]', channel = 'hidden').compose() # [TODO] Corrigir a regex, o mode é para jogar para uma 'dimensão chamado 'mode comment', só parser nessa dimensão conseguirão ler
+no_representation_tokens_complete = ClassicRegex(identifier='NO_representation_TOKEN', representation=f'[\r\n\t ]', channel = 'hidden').compose() # [TODO] Corrigir a regex, o mode é para jogar para uma 'dimensão chamado 'mode comment', só parser nessa dimensão conseguirão ler
+no_representation_tokens_without_space = ClassicRegex(identifier='NO_representation_TOKEN', representation=f'[\r\n\t]', channel = 'hidden').compose() # [TODO] Corrigir a regex, o mode é para jogar para uma 'dimensão chamado 'mode comment', só parser nessa dimensão conseguirão ler
 
 
 
 # Define t_identifier first to use in xml_attribute
 def get_t_identifier():
-    return ANTLR4Like(name='T_IDENTIFIER', value='&VECTOR | &OBJECT | &PROGRAM').compose(
-        values=[
+    return ANTLR4Like(identifier='T_IDENTIFIER', representation='&VECTOR | &OBJECT | &PROGRAM').compose(
+        representations=[
             vector.compose(),
             object_.compose(),
             program  # Reference to program to allow nesting
@@ -136,14 +161,14 @@ object_ = None
 
 # Define Grammar Rules
 # VECTOR Rule
-vector = ANTLR4Like(name='VECTOR', value='&OPEN_BRACKET &Q_IDENTIFIER (&COMMA &Q_IDENTIFIER)* &CLOSE_BRACKET').compose(
-    values=[
+vector = ANTLR4Like(identifier='VECTOR', representation='&OPEN_BRACKET &Q_IDENTIFIER (&COMMA &Q_IDENTIFIER)* &CLOSE_BRACKET').compose(
+    context=[
         open_bracket,
         q_identifier,
-        ANTLR4Like(name='Q_IDENTIFIER_LIST', value='(&COMMA &Q_IDENTIFIER)*').compose(
-            values=[
-                ANTLR4Like(name='Q_IDENTIFIER_ITEM', value='&COMMA &Q_IDENTIFIER').compose(
-                    values=[comma, q_identifier]
+        ANTLR4Like(identifier='Q_IDENTIFIER_LIST', representation='(&COMMA &Q_IDENTIFIER)*').compose(
+            context=[
+                ANTLR4Like(identifier='Q_IDENTIFIER_ITEM', representation='&COMMA &Q_IDENTIFIER').compose(
+                    context=[comma, q_identifier]
                 )
             ]
         ),
@@ -152,8 +177,8 @@ vector = ANTLR4Like(name='VECTOR', value='&OPEN_BRACKET &Q_IDENTIFIER (&COMMA &Q
 )
 
 # OBJECT Rule
-object_ = ANTLR4Like(name='OBJECT', value='&OPEN_KEY &Q_IDENTIFIER &TWO_DOTS &PROGRAM &CLOSE_KEY').compose(
-    values=[
+object_ = ANTLR4Like(identifier='OBJECT', representation='&OPEN_KEY &Q_IDENTIFIER &TWO_DOTS &PROGRAM &CLOSE_KEY').compose(
+    context=[
         open_key,
         q_identifier,
         two_dots,
@@ -166,57 +191,52 @@ object_ = ANTLR4Like(name='OBJECT', value='&OPEN_KEY &Q_IDENTIFIER &TWO_DOTS &PR
 t_identifier = get_t_identifier()
 
 # XML_ATTRIBUTE Rule
-xml_attribute = ANTLR4Like(name='XML_ATTRIBUTE', value='&Q_IDENTIFIER &EQUALS &T_IDENTIFIER').compose(
-    values=[q_identifier, equals, t_identifier]
+xml_attribute = ANTLR4Like(identifier='XML_ATTRIBUTE', representation='&Q_IDENTIFIER &EQUALS &T_IDENTIFIER').compose(
+    context=[q_identifier, equals, t_identifier]
 )
 
 # OPEN_TAG Rule
-open_tag = ANTLR4Like(name='OPEN_TAG', value='&OPEN_ELEMENT &Q_IDENTIFIER &XML_ATTRIBUTE* &CLOSE_ELEMENT').compose(
-    values=[
+open_tag = ANTLR4Like(identifier='OPEN_TAG', representation='&OPEN_ELEMENT &Q_IDENTIFIER &XML_ATTRIBUTE* &CLOSE_ELEMENT').compose(
+    context=[
         open_element,
         q_identifier,
-        ANTLR4Like(name='XML_ATTRIBUTE_LIST', value='&XML_ATTRIBUTE*').compose(
-            values=[xml_attribute]
+        ANTLR4Like(identifier='XML_ATTRIBUTE_LIST', representation='&XML_ATTRIBUTE*').compose(
+            context=[xml_attribute]
         ),
         close_element
     ]
 )
 
 # CLOSE_TAG Rule
-close_tag = ANTLR4Like(name='CLOSE_TAG', value='&OPEN_ELEMENT &SLASH &Q_IDENTIFIER &CLOSE_ELEMENT').compose(
-    values=[open_element, slash, q_identifier, close_element]
+close_tag = ANTLR4Like(identifier='CLOSE_TAG', representation='&OPEN_ELEMENT &SLASH &Q_IDENTIFIER &CLOSE_ELEMENT').compose(
+    context=[open_element, slash, q_identifier, close_element]
 )
 
 # XML_STATEMENT Rule
-xml_statement = ANTLR4Like(name='XML_STATEMENT', value='&OPEN_TAG &PROGRAM &CLOSE_TAG').compose({
-    Propagation.ONLY_LOCAL: [open_tag, lambda text: program.match(text), close_tag],
-    Propagation.REPLACE: {
-        Propagation.ONLY_LOCAL: [no_value_tokens_complete, no_value_tokens_without_space]
-    },
-
-})
+xml_statement = ANTLR4Like(identifier='XML_STATEMENT', representation='&OPEN_TAG &PROGRAM &CLOSE_TAG').compose(
+    context = [open_tag, program, close_tag, no_representation_tokens_without_space])
 
 # IMPORT_STATEMENT Rule
-import_statement = ANTLR4Like(name='IMPORT_STATEMENT', value='&REQUIRE &IDENTIFIER').compose(
-    values=[require, identifier]
+import_statement = ANTLR4Like(identifier='IMPORT_STATEMENT', representation='&REQUIRE &IDENTIFIER').compose(
+    context=[require, identifier]
 )
 
 # PROGRAM Rule
-program = ANTLR4Like(name='PROGRAM', value='(&XML_STATEMENT | &IMPORT_STATEMENT)').compose({
-    Propagation.ONLY_LOCAL: [xml_statement, import_statement, comment, no_value_tokens_complete],
-
-})
+program = ANTLR4Like(identifier='PROGRAM', representation='(&XML_STATEMENT | &IMPORT_STATEMENT)*').compose(
+    context = [xml_statement, import_statement, comment, no_representation_tokens_complete]
+)
 
 
 
 # Sample Code
 code = """
 <code>
-    <wolfram.Math instance=[Ship, Algo] anotherParameter={name: "Henrique"} thirdParameter=<anotherXmlThing></anotherXmlThing>>
+    require Ship
+    <wolfram.Math instance=[Ship, Algo] anotherParameter={identifier: "Henrique"} thirdParameter=<anotherXmlThing></anotherXmlThing>>
     </wolfram.Math>
 </code>
 """
 
 # Parsing the Code
-parsed_output = program.match_many(code)
+parsed_output = program.parse(code)
 print(parsed_output)
