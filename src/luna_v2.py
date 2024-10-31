@@ -16,6 +16,7 @@ class PrototypeContext:
         self.forward = None
         self.backward = None
 
+    #[TODO] terminar implementação, a partir
     def get(key: str, default = None, propagation = Prototype.ONLY_LOCAL):
         if propagation == Prototype.ONLY_LOCAL:
             return self.data.get(key, default)
@@ -26,10 +27,20 @@ class PrototypeContext:
             return value
         else:
             #[TODO] Implementar as outras opções
+            pass
         
 
+    #[TODO]
+    def set(key, value):
+        pass
 
-    
+#[TODO]
+class Consumer:
+    pass
+
+
+class IMicroInterpreter:
+    pass
 
 letter_pattern = '[a-zA-Z_À-ÿ]'
 digit_pattern = '[0-9]'
@@ -50,11 +61,41 @@ class IMicroInterpreter(ABC):
         self.children = []
         self.tokens = []
 
-    def parse(self, text):
-        
+
+    def get_parser_sequence(self) -> list[IMicroInterpreter]:
         pass
+
+
+
+    @classmethod
+    def parse(cls, parser, path: str):
+        
+        
+        sequence_parser: iter[IMicroInterpreter] = parser.get_parser_sequence()
+
+        vector_history = []
+        prototype_context = PrototypeContext(name="root")
+        main_context = prototype_context
+        consumer = cls.start_consume(path)
+        previous_parser = None
+        actual_parser: list[IMicroInterpreter] = next(sequence_parser)        
+        while not consumer.finished():
+            ln_begin, cl_begin = consumer.get_actual_position_consumer()
+            parser_choosed: IMicroInterpreter = cls.select_candidate(actual_parser, consumer)
+            value = consumer.get_value()
+            ln_end, cl_end = consumer.get_actual_position_consumer()
+            actual_parser.set(parser_choosed.name, ln_begin, cl_begin, ln_end, cl_end, value)
+
+            previous_parser = actual_parser
+            actual_parser = next(sequence_parser)
+
+            if actual_parser.is_child_of(previous_parser):
+                prototype_context = prototype_context.append_child()
+
+
+
     
-    def compose(self, context: list['IMicroInterpreter']):
+    def compose(self, context: list[IMicroInterpreter]):
         
         pass
     
