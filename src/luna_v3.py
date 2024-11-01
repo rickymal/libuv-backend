@@ -1,328 +1,146 @@
 import re
 from abc import ABC, abstractmethod
 
-class Prototype:
-    ONLY_LOCAL = 1
-    FORWARD = 2
-    BACKWARD = 3
-    GLOBAL = 4
+import re
+from abc import ABC, abstractmethod
 
+# Classe representando diferentes tipos de propagação para o contexto protótipo
+class Prototype:
+    ONLY_LOCAL = 1    # Propagação apenas local
+    FORWARD = 2       # Propagação para a frente
+    BACKWARD = 3      # Propagação para trás
+    GLOBAL = 4        # Propagação global (ambos os sentidos)
+
+# Classe que gerencia o contexto protótipo, permitindo armazenar e recuperar dados com base em regras de propagação
 class PrototypeContext:
     def __init__(self, name: str):
+        # Inicializa um novo contexto protótipo com um nome específico
         self.name = name
         self.data = dict()
-        self.forward = None
-        self.backward = None
+        self.forward = None    # Contexto seguinte (para frente)
+        self.backward = None   # Contexto anterior (para trás)
+        pass
 
     def get(self, key: str, default=None, propagation=Prototype.ONLY_LOCAL):
-        if propagation == Prototype.ONLY_LOCAL:
-            return self.data.get(key, default)
-        elif propagation == Prototype.FORWARD:
-            value = self.data.get(key, None)
-            if value is None and self.forward:
-                return self.forward.get(key, default, propagation)
-            return value if value is not None else default
-        elif propagation == Prototype.BACKWARD:
-            value = self.data.get(key, None)
-            if value is None and self.backward:
-                return self.backward.get(key, default, propagation)
-            return value if value is not None else default
-        elif propagation == Prototype.GLOBAL:
-            # Search both backward and forward
-            value = self.data.get(key, None)
-            if value is not None:
-                return value
-            if self.backward:
-                value = self.backward.get(key, default, propagation)
-                if value is not None:
-                    return value
-            if self.forward:
-                value = self.forward.get(key, default, propagation)
-                if value is not None:
-                    return value
-            return default
-        else:
-            return default
+        # Recupera um valor do contexto com base na chave e nas regras de propagação especificadas
+        pass
 
     def set(self, key, value):
-        self.data[key] = value
+        # Define um valor no contexto atual associado a uma chave específica
+        pass
 
     def append_child_context(self, name):
-        child_context = PrototypeContext(name)
-        child_context.backward = self
-        self.forward = child_context
-        return child_context
+        # Cria e anexa um contexto filho ao contexto atual, estabelecendo links de propagação
+        pass
 
+# Classe que gerencia o consumo de caracteres de uma string de entrada, mantendo o rastreamento da posição e linha atual
 class Consumer:
     def __init__(self, text):
+        # Inicializa o consumidor com o texto de entrada e configura as posições iniciais
         self.text = text
         self.position = 0
         self.line = 1
         self.column = 1
         self.length = len(text)
+        pass
 
     def peek(self, n=1):
-        end = min(self.position + n, self.length)
-        return self.text[self.position:end]
+        # Retorna os próximos 'n' caracteres sem avançar a posição do consumidor
+        pass
 
     def consume(self, n=1):
-        consumed = self.text[self.position:self.position + n]
-        self.position += n
-        for c in consumed:
-            if c == '\n':
-                self.line += 1
-                self.column = 1
-            else:
-                self.column += 1
-        return consumed
+        # Consome os próximos 'n' caracteres e atualiza a posição, linha e coluna do consumidor
+        pass
 
     def get_value(self, n=1):
-        return self.consume(n)
+        # Consome e retorna os próximos 'n' caracteres
+        pass
 
     def finished(self):
-        return self.position >= self.length
+        # Verifica se todo o texto foi consumido
+        pass
 
     def get_actual_position_consumer(self):
-        return self.line, self.column
+        # Retorna a linha e coluna atuais do consumidor
+        pass
 
+# Classe abstrata base para todos os parsers (interpretadores) no sistema
 class IMicroInterpreter(ABC):
     def __init__(self, identifier, representation, *dim, **kdim):
+        # Inicializa o interpretador com um identificador e uma representação (pode ser uma string ou padrão)
         self.identifier = identifier
         self.representation = representation
         self.dim = dim
         self.kdim = kdim
-        self.children = []
-        self.tokens = []
-        self.context = {}
+        self.children = []    # Lista de parsers filhos (se houver)
+        self.tokens = []      # Tokens associados ao parser
+        self.context = {}     # Contexto para resolução de referências
+        pass
 
     def get_parser_sequence(self):
-        return iter([self])
+        # Retorna uma sequência iterável de parsers a serem usados durante a análise
+        pass
 
     @classmethod
     def start_consume(cls, text):
-        return Consumer(text)
+        # Inicia um novo consumidor para o texto fornecido
+        pass
 
     @classmethod
     def select_candidate(cls, parsers: list['IMicroInterpreter'], consumer, min_look_ahead=1, max_look_ahead=10):
-        for parser in parsers:
-            original_position = consumer.position
-            result = parser.match(consumer)
-            if result is not None:
-                return parser, result
-            consumer.position = original_position  # Reset position if no match
-        return None, None
+        # Seleciona o parser candidato que corresponde ao texto atual do consumidor
+        pass
 
     @classmethod
     def parse(cls, parser, text: str):
-        sequence_parser = parser.get_parser_sequence()
-        prototype_context = PrototypeContext(name="root")
-        consumer = cls.start_consume(text)
-        previous_parser = None
-        actual_parser = next(sequence_parser)
-        while not consumer.finished():
-            ln_begin, cl_begin = consumer.get_actual_position_consumer()
-            parser_choosed, value = cls.select_candidate([actual_parser], consumer, min_look_ahead=1, max_look_ahead=10)
-            if not parser_choosed:
-                print(f"Error parsing at line {ln_begin}, column {cl_begin}")
-                break
-            ln_end, cl_end = consumer.get_actual_position_consumer()
-            prototype_context.set(parser_choosed.identifier, {
-                'start': (ln_begin, cl_begin),
-                'end': (ln_end, cl_end),
-                'value': value
-            })
-            previous_parser = actual_parser
-            try:
-                actual_parser = next(sequence_parser)
-            except StopIteration:
-                break
-            if actual_parser.is_child_of(previous_parser):
-                prototype_context = prototype_context.append_child_context(actual_parser.identifier)
-        return prototype_context.data
+        # Método principal para iniciar o processo de parsing com o parser fornecido e o texto de entrada
+        pass
 
     def compose(self, **kwargs):
-        self.context = kwargs.get('context', {})
-        self.propagation = kwargs.get('propagation', {})
-        return self
+        # Componha o interpretador configurando o contexto e a propagação conforme necessário
+        pass
 
     def is_child_of(self, other):
-        return self in getattr(other, 'children', [])
+        # Verifica se o interpretador atual é filho de outro interpretador
+        pass
 
     @abstractmethod
     def match(self, consumer):
+        # Método abstrato que tenta corresponder o texto atual do consumidor ao padrão do interpretador
         pass
 
+# Padrões regex básicos para letras e dígitos
 letter_pattern = '[a-zA-Z_À-ÿ]'
 digit_pattern = '[0-9]'
 letter_or_digit = f'(?:{letter_pattern}|{digit_pattern})'
 
+# Interpretador que corresponde a uma representação exata de string
 class Exactrepresentation(IMicroInterpreter):
     def compose(self, **kwargs):
-        return self
+        # Configura o interpretador exato (neste caso, não há configurações adicionais)
+        pass
 
     def match(self, consumer):
-        text = consumer.text[consumer.position:]
-        if text.startswith(self.representation):
-            consumer.consume(len(self.representation))
-            return self.representation
-        return None
+        # Tenta corresponder a representação exata no texto atual do consumidor
+        pass
 
+# Interpretador que utiliza expressões regulares clássicas para corresponder padrões no texto
 class ClassicRegex(IMicroInterpreter):
     def compose(self, **kwargs):
-        self.pattern = re.compile(self.representation)
-        return self
+        # Compila o padrão regex fornecido para uso posterior
+        pass
 
     def match(self, consumer):
-        text = consumer.text[consumer.position:]
-        match = self.pattern.match(text)
-        if match:
-            consumer.consume(match.end())
-            return match.group()
-        return None
+        # Tenta corresponder o padrão regex compilado no texto atual do consumidor
+        pass
 
-class ANTLR4Like(IMicroInterpreter):
-    def compose(self, **kwargs):
-        self.context = kwargs.get('context', {})
-        self.propagation = kwargs.get('propagation', {})
-        self.parser_sequence = self.build_parser_sequence()
-        return self
 
-    def build_parser_sequence(self):
-        tokens = self.tokenize_representation(self.representation)
-        sequence = self.parse_expression(tokens)
-        return sequence
+# Toda uma lógica abaixo para criar um interpretador bom
+# ...
 
-    def tokenize_representation(self, representation):
-        # Simple tokenizer for the representation string
-        tokens = []
-        i = 0
-        while i < len(representation):
-            c = representation[i]
-            if c.isspace():
-                i += 1
-                continue
-            elif c == '&':
-                # Reference to a subparser
-                i += 1
-                start = i
-                while i < len(representation) and (representation[i].isalnum() or representation[i] == '_'):
-                    i += 1
-                tokens.append(('REF', representation[start:i]))
-            elif c in '()*+?|':
-                tokens.append((c, c))
-                i += 1
-            else:
-                # Unexpected character
-                i += 1
-        return tokens
+ANTLR4Like = IMicroInterpreter.from_new_parser(antlr4_like)
 
-    def parse_expression(self, tokens):
-        # Parse alternation expressions separated by '|'
-        self.tokens = tokens
-        self.pos = 0
-        return self._parse_expression()
-
-    def _parse_expression(self):
-        options = [self._parse_term()]
-        while self.pos < len(self.tokens) and self.tokens[self.pos][0] == '|':
-            self.pos += 1  # Consume '|'
-            options.append(self._parse_term())
-        if len(options) == 1:
-            return options[0]
-        else:
-            return {'type': 'OR', 'options': options}
-
-    def _parse_term(self):
-        sequence = []
-        while self.pos < len(self.tokens) and self.tokens[self.pos][0] not in '|)':
-            factor = self._parse_factor()
-            if factor is not None:
-                sequence.append(factor)
-        return sequence
-
-    def _parse_factor(self):
-        token = self.tokens[self.pos]
-        if token[0] == 'REF':
-            parser_name = token[1]
-            self.pos += 1
-            quantifier = None
-            if self.pos < len(self.tokens) and self.tokens[self.pos][0] in ('*', '+', '?'):
-                quantifier = self.tokens[self.pos][0]
-                self.pos += 1
-            return {'type': 'REF', 'name': parser_name, 'quantifier': quantifier}
-        elif token[0] == '(':
-            self.pos += 1
-            expr = self._parse_expression()
-            if self.pos >= len(self.tokens) or self.tokens[self.pos][0] != ')':
-                raise ValueError("Expected ')'")
-            self.pos += 1  # Consume ')'
-            quantifier = None
-            if self.pos < len(self.tokens) and self.tokens[self.pos][0] in ('*', '+', '?'):
-                quantifier = self.tokens[self.pos][0]
-                self.pos += 1
-            return {'type': 'GROUP', 'expr': expr, 'quantifier': quantifier}
-        else:
-            raise ValueError(f"Unexpected token {token}")
-
-    def get_parser_by_name(self, name):
-        parser = self.context.get(name)
-        if parser is None:
-            raise ValueError(f"Parser '{name}' not found in context")
-        return parser
-
-    def match(self, consumer):
-        return self.match_expr(self.parser_sequence, consumer)
-
-    def match_expr(self, expr, consumer):
-        if isinstance(expr, dict):
-            if expr['type'] == 'OR':
-                for option in expr['options']:
-                    original_position = consumer.position
-                    result = self.match_expr(option, consumer)
-                    if result is not None:
-                        return result
-                    consumer.position = original_position  # Backtrack
-                return None
-            elif expr['type'] == 'REF':
-                parser = self.get_parser_by_name(expr['name'])
-                return self.match_with_quantifier(parser, expr.get('quantifier'), consumer)
-            elif expr['type'] == 'GROUP':
-                return self.match_with_quantifier(expr['expr'], expr.get('quantifier'), consumer)
-        elif isinstance(expr, list):
-            original_position = consumer.position
-            results = []
-            for item in expr:
-                result = self.match_expr(item, consumer)
-                if result is None:
-                    consumer.position = original_position  # Backtrack
-                    return None
-                results.append(result)
-            return results
-        else:
-            raise ValueError("Invalid expression in parser sequence")
-
-    def match_with_quantifier(self, parser, quantifier, consumer):
-        results = []
-        count = 0
-        while True:
-            original_position = consumer.position
-            if isinstance(parser, IMicroInterpreter):
-                result = parser.match(consumer)
-            else:
-                result = self.match_expr(parser, consumer)
-            if result is not None:
-                results.append(result)
-                count += 1
-                if quantifier == '?' or quantifier is None:
-                    break
-            else:
-                consumer.position = original_position
-                break
-            if quantifier == '?' or quantifier == '':
-                break
-        if quantifier == '+' and count == 0:
-            return None
-        return results
+# ...
 
 
 # Define tokens and parsers
