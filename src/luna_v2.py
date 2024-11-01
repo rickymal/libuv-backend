@@ -31,7 +31,7 @@ class PrototypeContext:
         
 
     #[TODO]
-    def set(key, value):
+    def set(key, *args, **kwargs):
         pass
 
 #[TODO]
@@ -62,9 +62,15 @@ class IMicroInterpreter(ABC):
         self.tokens = []
 
 
+    # [TODO] analisar a arvore criada e retornar um vetor de arrays de parser, o vetor representa a ordem de parsers a serem usadas
+    # e o arrays entrega as opções possíveis de parserm a serem utilizadas
     def get_parser_sequence(self) -> list[IMicroInterpreter]:
         pass
 
+    # [TODO] retorna um objeto para auxiliar no consumo, controla todo o acesso do que é lido ou não.
+    @classmethod
+    def start_consume(cls):
+        pass
 
 
     @classmethod
@@ -81,7 +87,7 @@ class IMicroInterpreter(ABC):
         actual_parser: list[IMicroInterpreter] = next(sequence_parser)        
         while not consumer.finished():
             ln_begin, cl_begin = consumer.get_actual_position_consumer()
-            parser_choosed: IMicroInterpreter = cls.select_candidate(actual_parser, consumer)
+            parser_choosed: IMicroInterpreter = cls.select_candidate(actual_parser, consumer, min_look_ahead = 1, max_look_ahead = 10,)
             value = consumer.get_value()
             ln_end, cl_end = consumer.get_actual_position_consumer()
             actual_parser.set(parser_choosed.name, ln_begin, cl_begin, ln_end, cl_end, value)
@@ -90,7 +96,7 @@ class IMicroInterpreter(ABC):
             actual_parser = next(sequence_parser)
 
             if actual_parser.is_child_of(previous_parser):
-                prototype_context = prototype_context.append_child()
+                prototype_context = prototype_context.append_child_context()
 
 
 
