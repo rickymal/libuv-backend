@@ -19,13 +19,17 @@ from typing import List, Dict, Union, Tuple, Callable
 
 # Classe base para as funcionalidades comuns de busca
 class BaseStringFinder:
-    def __init__(self, data: Union[str, 'Stream'], on_find_token: Callable[[str], Tuple[List[str], Dict[str, Union[int, str]]]] = None):
+    def __init__(self, data: Union[str, 'Stream'], on_find_token: Callable[[str], Tuple[List[str], Dict[str, Union[int, str]]]] = None, context = None, name = None):
         self.data = data if isinstance(data, str) else data.read() if hasattr(data, 'read') else None
         if self.data is None:
             raise ValueError("O parâmetro deve ser uma string ou um stream com o método 'read'.")
         
         # Callback para adicionar metadados personalizados
         self.on_find_token = on_find_token if on_find_token else lambda token: ([], {})
+        self.context = context
+
+        self.context.set('tokens', self.find_positions_with_line_column())
+        self.context.set('name', name)
 
     def get_slice(self, start: int, end: int) -> str:
         return self.data[start:end]
@@ -53,10 +57,9 @@ class BaseStringFinder:
 
 # Subclasse para busca com expressões regulares
 class RegexFinder(BaseStringFinder):
-    def __init__(self, data: str, on_find_token: Callable[[str], Tuple[List[str], Dict[str, int | str]]] = None, pattern = None):
-        super().__init__(data, on_find_token)
+    def __init__(self, data: str, on_find_token: Callable[[str], Tuple[List[str], Dict[str, int | str]]] = None, pattern = None, context = None, name = None):
+        super().__init__(data, on_find_token, context, name)
         self.pattern = pattern
-
 
     def find_positions(self, pattern: str) -> List[Dict[str, Union[int, str]]]:
         """Encontra todas as ocorrências de um padrão regex na string armazenada."""
@@ -200,19 +203,117 @@ regex_finder = RegexFinder(text_complete, on_find_token=add_meta, pattern = r"&\
 
 resultados = regex_finder.find_positions_with_line_column()
 
-# Exibindo os resultados com metadados personalizados
-print("Tokens encontrados com metadados adicionais:")
-for resultado in resultados:
-    print(resultado)
+# # Exibindo os resultados com metadados personalizados
+# print("Tokens encontrados com metadados adicionais:")
+# for resultado in resultados:
+#     print(resultado)
 
 
 # Instância de RegexFinder com o callback on_find_token
-regex_finder = SplitFinder("&START &WHITESPACE+ (&MIDDLE1|&MIDDLE2) &WHITESPACE+ &END", on_find_token=add_meta)
+split_finder = SplitFinder("&START &WHITESPACE+ (&MIDDLE1|&MIDDLE2) &WHITESPACE+ &END", on_find_token=add_meta)
 
 # Padrão para capturar identificadores e caracteres especiais
-resultados = regex_finder.find_positions_with_line_column()
+resultados = split_finder.find_positions_with_line_column()
 
-# Exibindo os resultados com metadados personalizados
-print("Tokens encontrados com metadados adicionais:")
-for resultado in resultados:
-    print(resultado)
+# # Exibindo os resultados com metadados personalizados
+# print("Tokens encontrados com metadados adicionais:")
+# for resultado in resultados:
+#     print(resultado)
+
+
+class Prototype:
+    ONLY_LOCAL = 1
+    FORWARD = 2
+    BACKWARD = 3
+    GLOBAL = 4
+
+
+class PrototypeContext:
+    def __init__(self, name: str):
+        self.name = name
+        self.data = dict()
+        self.forward = None
+        self.backward = None
+
+    def get(self, key: str, default=None, propagation=Prototype.ONLY_LOCAL):
+        if propagation == Prototype.ONLY_LOCAL:
+            return self.data.get(key, default)
+        elif propagation == Prototype.FORWARD:
+            value = self.data.get(key, None)
+            if value is None and self.forward:
+                return self.forward.get(key, default, propagation)
+            return value if value is not None else default
+        elif propagation == Prototype.BACKWARD:
+            value = self.data.get(key, None)
+            if value is None and self.backward:
+                return self.backward.get(key, default, propagation)
+            return value if value is not None else default
+        elif propagation == Prototype.GLOBAL:
+            # Search both backward and forward
+            value = self.data.get(key, None)
+            if value is not None:
+                return value
+            if self.backward:
+                value = self.backward.get(key, default, propagation)
+                if value is not None:
+                    return value
+            if self.forward:
+                value = self.forward.get(key, default, propagation)
+                if value is not None:
+                    return value
+            return default
+        else:
+            return default
+
+    def set(self, key, value):
+        self.data[key] = value
+
+    def append_child_context(self, name):
+        child_context = PrototypeContext(name)
+        child_context.backward = self
+        self.forward = child_context
+        return child_context
+
+
+# Teste com o programa
+root = PrototypeContext(name = 'root')
+
+
+
+
+
+
+
+regex_finder = RegexFinder(text_complete, on_find_token=add_meta, pattern = r"&\S+|[|*?()]", context = root.append_child_context(name = 'text'))
+split_finder = SplitFinder(text_complete, on_find_token=[add_meta, create_children], context = root.append_child_context(name = 'split'))
+
+
+letter_pattern = '[a-zA-Z_À-ÿ]'
+digit_pattern = '[0-9]'
+letter_or_digit = f'(?:{letter_pattern}|{digit_pattern})'
+
+
+OPEN_TAG = ExactMatchFinder('<', context = None)
+CLOSE_TAG = ExactMatchFinder('>', context = None)
+A_IDENTIFIER = RegexFinder(f'{letter_pattern}{letter_or_digit}*')
+B_IDENTIFIER = RegexFinder(f'{letter_pattern}{letter_or_digit}*(?:\\.{letter_pattern}{letter_or_digit}*)*')
+
+
+root = PrototypeContext(name = 'root')
+
+
+root = SplitFinder("&TAG")
+
+
+
+code = "<code> TESTE <code>"
+
+
+
+# code = """
+# <code>
+#     <wolfram.Math instance=[Ship, Algo] anotherParameter={identifier: "Henrique"} thirdParameter=<anotherXmlThing></anotherXmlThing>>
+#     </wolfram.Math>
+# </code>
+# """
+
