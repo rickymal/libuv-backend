@@ -82,6 +82,20 @@ class Token:
                 yaml_str += child.to_yaml(indent + 1)
         return yaml_str
 
+    def to_mermaid(self, parent_id=None, node_id=0):
+        lines = []
+        current_id = node_id
+        label = f"{self.name}: {self.value.strip().replace('\"', '\\\"')}"
+        label = label.replace('\n', '\\n')  # Escapar quebras de linha
+        lines.append(f'id{current_id}["{label}"]')
+        if parent_id is not None:
+            lines.append(f'id{parent_id} --> id{current_id}')
+        next_id = current_id + 1
+        for child in self.children:
+            child_lines, next_id = child.to_mermaid(parent_id=current_id, node_id=next_id)
+            lines.extend(child_lines)
+        return lines, next_id
+
     def __eq__(self, other):
         if not isinstance(other, Token):
             return False
@@ -592,5 +606,12 @@ result_token, pos = root.scan(text, context=ctx_root, pos=0)
 if result_token:
     print("Parsing bem-sucedido. O token resultante é:")
     print(result_token.to_yaml(indent=0))
+
+    # Gerar a representação Mermaid
+    mermaid_lines, _ = result_token.to_mermaid()
+    mermaid_output = "graph TD;\n" + "\n".join(mermaid_lines)
+    print("\nRepresentação Mermaid:\n")
+    print(mermaid_output)
 else:
     print("Parsing falhou.")
+
