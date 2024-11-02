@@ -302,14 +302,25 @@ B_IDENTIFIER = RegexFinder(f'{letter_pattern}{letter_or_digit}*(?:\\.{letter_pat
 root = PrototypeContext(name = 'root')
 
 
-root = SplitFinder("&TAG")
+def extract(ctx: PrototypeContext):
+    args = []
+    kwargs = {}
+
+    substring = ctx.get("text")
+    if ctx.value == "&TAG":
+        new_ctx = ctx.append_child_context("TAG")
+        kwargs['TAG'] = OPEN_TAG.find_positions_with_line_column(substring)
+    # [TODO] Fazer os outros
 
 
+    return args, kwargs
 
+root = SplitFinder(on_find_token=extract, context=root, pattern = "&OPEN_TAG &B_IDENTIFIER &CLOSE_TAG")
+
+# tem que identificar o '<code>'
 code = "<code> TESTE <code>"
 
-
-
+# versão completa para tentarmos no futuro
 # code = """
 # <code>
 #     <wolfram.Math instance=[Ship, Algo] anotherParameter={identifier: "Henrique"} thirdParameter=<anotherXmlThing></anotherXmlThing>>
