@@ -140,14 +140,14 @@ text = code.strip()
 result_token, pos = root.scan(text, context=ctx_root, pos=0)
 
 if result_token:
-    print("Parsing bem-sucedido. O token resultante é:")
+    # print("Parsing bem-sucedido. O token resultante é:")
     print(result_token.to_yaml(indent=0))
 
-    # Gerar a representação Mermaid
-    mermaid_lines, _ = result_token.to_mermaid()
-    mermaid_output = "graph TD;\n" + "\n".join(mermaid_lines)
-    print("\nRepresentação Mermaid:\n")
-    print(mermaid_output)
+    # # Gerar a representação Mermaid
+    # mermaid_lines, _ = result_token.to_mermaid()
+    # mermaid_output = "graph TD;\n" + "\n".join(mermaid_lines)
+    # print("\nRepresentação Mermaid:\n")
+    # print(mermaid_output)
 else:
     print("Parsing falhou.")
 
