@@ -45,38 +45,6 @@ def load_snapshot(ctx: TestContext):
     snapshot = ctx.get('snapshot')
     ctx.approve()
 
-
-
-# def take_photos(ctx: TestContext):
-#     snapshot = ctx.get('snapshot')
-#     snapshot.take_snapshot(description = "photo",data = {
-#         'data': 'henrique',
-#         'age': 27,
-#         'other': '2025-05-05'
-#     })
-
-#     snapshot.take_snapshot(description = "photo",data = {
-#         'data': 'henrique',
-#         'age': 27,
-#         'other': '2025-05-05'
-#     })
-
-#     snapshot.take_snapshot(description = "photo",data = {
-#         'data': 'henrique',
-#         'age': 27,
-#         'other': {
-#             "aa" : 'mauler',
-#             "bb" : '2025-05-05'
-#         },
-#         'aother': [
-#             "henrique",
-#             '2025-05-05'
-#         ]
-#     })
-#     ctx.approve()
-
-
-
 def assertions(ctx: TestContext):
     snapshot = ctx.get('snapshot')
 
