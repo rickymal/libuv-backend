@@ -29,6 +29,10 @@ class SnapshotManager:
         self.schema_manager = schema_manager
         self.max_store = max_store
         self.snapshots = []
+        self.file = None
+
+        from functools import partial, partialmethod
+        
 
     @classmethod
     def create(cls):
@@ -67,10 +71,83 @@ class SnapshotManager:
         schema = self.schema_manager.generate(self.snapshots)
         self.schema_manager.save(schema)
 
-        
 
-    def load(self):
-        self.schema_manager.save(snapshots_final)
+    def assert_value(self, data, mode: str, by: str):
+        # Tenta carregar o reality_data (se não existir, salva data como referência)
+        if not self.schema_manager.serializer.has_file():
+            try:
+                reality_data = self.schema_manager.serializer.load()
+            except FileNotFoundError:
+                self.schema_manager.take_snapshot(data=data, description='')
+                self.schema_manager.save_album()
+                reality_data = {'data': data}
+
+        # Define o dado de referência para comparação
+        reference = reality_data['data']
+
+        # Verificação completa (modo 'total')
+        if mode == 'total':
+            if type(data) != type(reference):
+                raise AssertionError(f"Tipo incorreto: esperado '{type(reference).__name__}', mas encontrado '{type(data).__name__}'")
+
+            if isinstance(data, dict):
+                # Verificação exata para dicionários
+                if data != reference:
+                    raise AssertionError("Estrutura e valores não correspondem no modo 'total'.")
+            
+            elif isinstance(data, list):
+                # Verificação exata para listas
+                if len(data) != len(reference) or any(item != ref for item, ref in zip(data, reference)):
+                    raise AssertionError("Listas não correspondem no modo 'total'.")
+            
+            else:
+                # Verificação para dados primitivos
+                if data != reference:
+                    raise AssertionError(f"Valor incorreto: esperado '{reference}', mas encontrado '{data}'")
+
+        # Verificação parcial (modo 'partial')
+        elif mode == 'partial':
+            if by == 'input':
+                # Verifica se cada item de `data` está presente e correto em `reference`
+                if isinstance(data, dict):
+                    for key, value in data.items():
+                        if key in reference and reference[key] != value:
+                            raise AssertionError(f"Valor incorreto para '{key}': esperado '{reference[key]}', mas encontrado '{value}'")
+                elif isinstance(data, list):
+                    # Compara cada item da lista `data` com os itens de `reference` (assumindo uma verificação parcial de correspondência)
+                    for item in data:
+                        if item not in reference:
+                            raise AssertionError(f"Item '{item}' não encontrado na referência.")
+                else:
+                    # Para dados primitivos, verifica igualdade direta com `reference`
+                    if data != reference:
+                        raise AssertionError(f"Valor incorreto: esperado '{reference}', mas encontrado '{data}'")
+
+            elif by == 'snapshot':
+                # Verifica se cada item de `reference` está presente e correto em `data`
+                if isinstance(reference, dict):
+                    for key, value in reference.items():
+                        if key in data and data[key] != value:
+                            raise AssertionError(f"Valor incorreto para '{key}': esperado '{value}', mas encontrado '{data.get(key)}'")
+                elif isinstance(reference, list):
+                    # Verifica se todos os itens de `reference` estão em `data`
+                    for item in reference:
+                        if item not in data:
+                            raise AssertionError(f"Item '{item}' da referência não encontrado no dado.")
+                else:
+                    # Para dados primitivos, verifica igualdade direta com `data`
+                    if reference != data:
+                        raise AssertionError(f"Valor incorreto: esperado '{reference}', mas encontrado '{data}'")
+            else:
+                raise Exception("Formato 'by' inválido")
+        else:
+            raise Exception("Formato 'mode' inválido")
+
+
+    def assert_type(self, data: dict):
+        raise NotImplementedError()
+
+
 
 
 class BaseValidatorManager:
@@ -82,8 +159,10 @@ import yaml
 
 class YamlSerializer:
     # serializer = YamlSerializer(folder = 'mock')
-    def __init__(self, folder: str):
+    def __init__(self, folder: str, name: str):
         self.folder = folder
+        self.name = name
+        self.data = None
 
     def save(self, data: dict, extra_path=[]):
         # Cria o caminho completo do diretório
@@ -92,13 +171,20 @@ class YamlSerializer:
             os.makedirs(full_path)  # Cria todos os diretórios necessários
         
         # Define o caminho completo do arquivo (pode ser ajustado conforme necessário)
-        file_path = os.path.join(full_path, 'data.yaml')
+        file_path = os.path.join(full_path, self.name)
         with open(file_path, 'w') as f:
+            self.data = data
             yaml.dump(data, f)
 
-    def load(self, file_path):
+    def load(self, extra_path = []):
+        full_path = os.path.join(self.folder, *extra_path)
+        file_path = os.path.join(full_path, self.name)
         with open(file_path, 'r') as f:
-            return yaml.safe_load(f)
+            self.data = yaml.safe_load(f)
+            return self.data
+
+    def has_file(self):
+        return self.data is not None
 
 # Configuração do Logger
 logging.basicConfig(level=logging.DEBUG)
@@ -358,8 +444,11 @@ class DefaultSchemaManager:
         self.serializer.save(final_data)
 
     def load(self):
-        self.serializer.load(final_data)
+        self.serializer.load()
 
+    def assert_type(self, data: dict):
+        # mesma ideia do assert_type com a diferença de que checa o tipo
+        pass 
 
 
 class PrototypeInstance:
@@ -725,23 +814,6 @@ def dynamic_number_factory():
     n2 = random.randint(0, 100)
     return {'n1': n1, 'n2': n2}
 
-def generate_random_numbers():
-    n1 = random.randint(0, 100)
-    n2 = random.randint(0, 100)
-    return {'n1': n1, 'n2': n2}
-
-def generate_user_load():
-    return {'user_load': random.randint(50, 500)}
-
-def generate_response_time():
-    return {'response_time': np.random.normal(loc=200, scale=50)}
-
-def generate_random_params():
-    numbers = generate_random_numbers()
-    user_load = generate_user_load()
-    response_time = generate_response_time()
-    combined = {**numbers, **user_load, **response_time}
-    return combined
 
 
 if __name__ == "__main__":

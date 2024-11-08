@@ -9,7 +9,7 @@ happy_path = test_instance.create_container('scenario: o caminho feliz')
 generic_object_validator = BaseValidatorManager()
 # serializer = YamlSerializer(folder = 'mock')
 
-schema_object_validator = YamlSerializer(folder = 'mock')
+schema_object_validator = YamlSerializer(folder = 'mock', name = 'data.yaml')
 default_schema_manager = DefaultSchemaManager(validator = generic_object_validator, serializer = schema_object_validator)
 
 
@@ -50,7 +50,6 @@ ctx.set('snapshot', snapshot)
 
 def load_snapshot(ctx: TestContext):
     snapshot = ctx.get('snapshot')
-    # snapshot.load()
     ctx.approve()
 
 
@@ -62,9 +61,37 @@ def take_photos(ctx: TestContext):
         'age': 27,
         'other': '2025-05-05'
     })
+
+    snapshot.take_snapshot(description = "photo",data = {
+        'data': 'henrique',
+        'age': 27,
+        'other': '2025-05-05'
+    })
+
+    snapshot.take_snapshot(description = "photo",data = {
+        'data': 'henrique',
+        'age': 27,
+        'other': {
+            "aa" : 'mauler',
+            "bb" : '2025-05-05'
+        },
+        'aother': [
+            "henrique",
+            '2025-05-05'
+        ]
+    })
     ctx.approve()
 
 
+
+def assertions(ctx: TestContext):
+    snapshot = ctx.get('snapshot')
+
+    snapshot.assert_value({
+        'data': 'henrique'
+    }, mode = 'total', by = '')
+
+    raise Exception("TODO")
 def save_snapshot(ctx: TestContext):
     snapshot = ctx.get('snapshot')
     snapshot.save_album()
@@ -73,6 +100,7 @@ def save_snapshot(ctx: TestContext):
 
 test_instance.before_each(load_snapshot, isolated = False)
 test_instance.add_step("tirar fotos", take_photos, isolated = False)
+test_instance.add_step("tirar fotos", assertions, isolated = False) # assertions
 test_instance.after_each(save_snapshot, isolated = False)
 
 
