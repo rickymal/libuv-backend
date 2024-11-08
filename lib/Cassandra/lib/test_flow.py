@@ -8,7 +8,7 @@ import logging
 import hashlib
 import pickle
 import random
-from typing import Iterator
+from typing import Iterator, Sequence
 from rich.console import Console
 from rich.tree import Tree
 from rich.table import Table
@@ -18,6 +18,157 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 import asyncio
 import os
 # SnapshotManager(name = "happy path", max_store = lambda snapshot: snapshot * 10, schema_builder = default_schema_builder, validators = generic_object_validator, serializer = serializer)
+
+
+from collections.abc import Iterable, Mapping
+
+def smart_append(*iterables):
+    # Caso não tenha nenhum iterável fornecido
+    if not iterables:
+        return []
+
+    # Caso tenha apenas um iterável, retornamos ele diretamente
+    if len(iterables) == 1:
+        return iterables[0]
+
+    # Inicializamos o resultado com uma cópia do primeiro iterável
+    result = iterables[0]
+
+    for current in iterables[1:]:
+        if isinstance(result, list) and isinstance(current, list):
+            # Append para listas
+            result.extend(current)
+        
+        elif isinstance(result, dict) and isinstance(current, dict):
+            # Para dicionários com aninhamento e flatten
+            for key in set(result.keys()).union(current.keys()):
+                val1 = result.get(key, [])
+                val2 = current.get(key, [])
+                
+                # Se ambos os valores forem dicionários, faz a recursão
+                if isinstance(val1, Mapping) and isinstance(val2, Mapping):
+                    result[key] = smart_append(val1, val2)
+                else:
+                    # Converte para lista caso não seja iterável, excluindo strings
+                    if not isinstance(val1, Iterable) or isinstance(val1, str):
+                        val1 = [val1]
+                    if not isinstance(val2, Iterable) or isinstance(val2, str):
+                        val2 = [val2]
+                    
+                    # Concatena e achata os valores
+                    result[key] = list(val1) + list(val2)
+        
+        else:
+            raise TypeError("Todos os argumentos devem ser do tipo list ou dict, e compatíveis entre si.")
+    
+    return result
+
+# Exemplo de uso
+
+# Para listas múltiplas
+list1 = [1, 2, 3]
+list2 = [4, 5, 6]
+list3 = [7, 8]
+print("Resultado para múltiplas listas:", smart_append(list1, list2, list3))
+# Esperado: [1, 2, 3, 4, 5, 6, 7, 8]
+
+# Para dicionários aninhados múltiplos
+dict1 = {'p': 'oi', 'q': [1, 2], 'nested': {'a': 'hello'}}
+dict2 = {'p': 'two', 'q': [3, 4], 'nested': {'a': 'world', 'b': 'new'}}
+dict3 = {'p': 'three', 'q': [5, 6], 'nested': {'b': 'additional'}}
+print("Resultado para múltiplos dicionários aninhados:", smart_append(dict1, dict2, dict3))
+# Esperado: {'p': ['oi', 'two', 'three'], 'q': [1, 2, 3, 4, 5, 6], 'nested': {'a': ['hello', 'world'], 'b': ['new', 'additional']}}
+
+
+from collections.abc import Mapping, Iterable
+
+def freeze_structure(item):
+    """Converte estruturas mutáveis (listas, dicionários) em tuplas imutáveis para comparação."""
+    if isinstance(item, Mapping):
+        # Para dicionários, converte para tupla de chave-valor ordenada para consistência
+        return tuple((key, freeze_structure(value)) for key, value in sorted(item.items()))
+    elif isinstance(item, list):
+        # Para listas, converte recursivamente cada item para sua versão imutável
+        return tuple(freeze_structure(sub_item) for sub_item in item)
+    else:
+        # Para tipos primitivos, retorna o próprio valor
+        return item
+
+def smart_unique_iterable(lst):
+    """Remove elementos duplicados estruturalmente de uma lista, incluindo estruturas aninhadas."""
+    seen = set()
+    unique_list = []
+    
+    for item in lst:
+        # Converte o item para uma estrutura imutável para comparação
+        frozen_item = freeze_structure(item)
+        if frozen_item not in seen:
+            # Se a estrutura ainda não foi vista, adiciona à lista e marca como vista
+            unique_list.append(item)
+            seen.add(frozen_item)
+    
+    return unique_list
+
+# Exemplo de uso
+
+# Testando com uma lista aninhada
+test_list = [
+    {"a": 1, "b": [2, 3]}, 
+    {"b": [2, 3], "a": 1},  # Estruturalmente igual ao primeiro
+    [1, 2, [3, 4]], 
+    [1, 2, [3, 4]],          # Estruturalmente igual ao terceiro
+    {"a": 1, "b": [2, 3, 4]}
+]
+
+print("Resultado da filtragem:", smart_unique_iterable(test_list))
+# Esperado: [{'a': 1, 'b': [2, 3]}, [1, 2, [3, 4]], {'a': 1, 'b': [2, 3, 4]}]
+
+
+
+from collections import defaultdict
+
+class MultiDict:
+    def __init__(self):
+        # Cada par de chave principal e valor armazena o conjunto completo de chaves relacionadas
+        self.relations = defaultdict(set)
+
+    def insert(self, keys, value=None):
+        # Converte o conjunto de chaves em uma tupla imutável para usá-las como chave única
+        key_tuple = tuple(keys.items())
+        
+        # Adiciona a tupla de cada chave ao conjunto de cada chave individual
+        for single_key, single_value in keys.items():
+            # Cada chave individual aponta para o conjunto de todas as outras chaves e valores
+            self.relations[(single_key, single_value)].add(key_tuple)
+
+    def get(self, query):
+        # Converte a consulta em uma tupla para buscar na estrutura de dados
+        query_tuple = tuple(query.items())
+        # Pega todos os conjuntos de chaves relacionadas
+        results = self.relations.get(query_tuple, set())
+        
+        # Monta o resultado excluindo a própria chave consultada para evitar repetições
+        final_results = []
+        for result in results:
+            result_dict = dict(result)
+            if query_tuple in result:
+                final_results.append({k: v for k, v in result if (k, v) != query_tuple})
+        
+        return final_results
+
+# Exemplo de uso
+multi_dict = MultiDict()
+
+# # Inserindo relações
+# multi_dict.insert(keys={"p": "oi1", "v": "tutu pom"}, value=None)
+# multi_dict.insert(keys={"p": "oi2", "v": "tutu pom"}, value=None)
+# multi_dict.insert(keys={"p": "oi2", "v": "tutu pom"}, value=None)
+
+# # Testando consultas
+# print("Relacionados a {'p': 'oi2'}:", multi_dict.get({"p": "oi2"}))
+# # Esperado: Retorna [{'v': 'tutu pom'}, {'v': 'tutu pom'}]
+# print("Relacionados a {'v': 'tutu pom'}:", multi_dict.get({"v": "tutu pom"}))
+# # Esperado: Retorna [{'p': 'oi1'}, {'p': 'oi2'}, {'p': 'oi2'}]
 
 
 
@@ -78,77 +229,132 @@ class SnapshotManager:
             try:
                 reality_data = self.schema_manager.serializer.load()
             except FileNotFoundError:
+                self.take_snapshot(data=data, description='')
+                self.save_album()
+                reality_data = {'data': data}
+        
+        # Verificação completa (modo 'total')
+        if mode == 'total':
+            return self.schema_manager.validate_all_values(data)
+        # Verificação parcial (modo 'partial')
+        elif mode == 'partial':
+            return self.schema_manager.validate_partial_values(data, reference = by)
+        else:
+            raise Exception("Formato 'mode' inválido")
+
+    def assert_partial(self, data, by, reference):
+        if by == 'input':
+                # Verifica se cada item de `data` está presente e correto em `reference`
+            if isinstance(data, dict):
+                for key, value in data.items():
+                    if key in reference and reference[key] != value:
+                        raise AssertionError(f"Valor incorreto para '{key}': esperado '{reference[key]}', mas encontrado '{value}'")
+            elif isinstance(data, list):
+                    # Compara cada item da lista `data` com os itens de `reference` (assumindo uma verificação parcial de correspondência)
+                for item in data:
+                    if item not in reference:
+                        raise AssertionError(f"Item '{item}' não encontrado na referência.")
+            else:
+                    # Para dados primitivos, verifica igualdade direta com `reference`
+                if data != reference:
+                    raise AssertionError(f"Valor incorreto: esperado '{reference}', mas encontrado '{data}'")
+
+        elif by == 'snapshot':
+                # Verifica se cada item de `reference` está presente e correto em `data`
+            if isinstance(reference, dict):
+                for key, value in reference.items():
+                    if key in data and data[key] != value:
+                        raise AssertionError(f"Valor incorreto para '{key}': esperado '{value}', mas encontrado '{data.get(key)}'")
+            elif isinstance(reference, list):
+                    # Verifica se todos os itens de `reference` estão em `data`
+                for item in reference:
+                    if item not in data:
+                        raise AssertionError(f"Item '{item}' da referência não encontrado no dado.")
+            else:
+                    # Para dados primitivos, verifica igualdade direta com `data`
+                if reference != data:
+                    raise AssertionError(f"Valor incorreto: esperado '{reference}', mas encontrado '{data}'")
+        else:
+            raise Exception("Formato 'by' inválido")
+
+    def assert_total(self, data, reference):
+        if type(data) != type(reference):
+            raise AssertionError(f"Tipo incorreto: esperado '{type(reference).__name__}', mas encontrado '{type(data).__name__}'")
+
+        if isinstance(data, dict):
+                # Verificação exata para dicionários
+            if data != reference:
+                raise AssertionError("Estrutura e valores não correspondem no modo 'total'.")
+            
+        elif isinstance(data, list):
+                # Verificação exata para listas
+            if len(data) != len(reference) or any(item != ref for item, ref in zip(data, reference)):
+                raise AssertionError("Listas não correspondem no modo 'total'.")
+            
+        else:
+                # Verificação para dados primitivos
+            if data != reference:
+                raise AssertionError(f"Valor incorreto: esperado '{reference}', mas encontrado '{data}'")
+
+
+    def assert_type(self, data):
+        # Tenta carregar o reality_data (se não existir, salva data como referência)
+        if not self.schema_manager.serializer.has_file():
+            try:
+                reality_data = self.schema_manager.serializer.load()
+            except FileNotFoundError:
                 self.schema_manager.take_snapshot(data=data, description='')
                 self.schema_manager.save_album()
                 reality_data = {'data': data}
 
-        # Define o dado de referência para comparação
-        reference = reality_data['data']
+        # Define o schema de referência para verificação de tipos
+        reference = reality_data.get('schema', {})
 
-        # Verificação completa (modo 'total')
-        if mode == 'total':
-            if type(data) != type(reference):
-                raise AssertionError(f"Tipo incorreto: esperado '{type(reference).__name__}', mas encontrado '{type(data).__name__}'")
+        # Verifica se o schema contém as definições necessárias
+        if 'properties' not in reference or 'required' not in reference:
+            raise ValueError("O schema está incompleto ou malformado.")
 
-            if isinstance(data, dict):
-                # Verificação exata para dicionários
-                if data != reference:
-                    raise AssertionError("Estrutura e valores não correspondem no modo 'total'.")
-            
-            elif isinstance(data, list):
-                # Verificação exata para listas
-                if len(data) != len(reference) or any(item != ref for item, ref in zip(data, reference)):
-                    raise AssertionError("Listas não correspondem no modo 'total'.")
-            
-            else:
-                # Verificação para dados primitivos
-                if data != reference:
-                    raise AssertionError(f"Valor incorreto: esperado '{reference}', mas encontrado '{data}'")
+        properties = reference['properties']
+        required_fields = reference['required']
 
-        # Verificação parcial (modo 'partial')
-        elif mode == 'partial':
-            if by == 'input':
-                # Verifica se cada item de `data` está presente e correto em `reference`
-                if isinstance(data, dict):
-                    for key, value in data.items():
-                        if key in reference and reference[key] != value:
-                            raise AssertionError(f"Valor incorreto para '{key}': esperado '{reference[key]}', mas encontrado '{value}'")
-                elif isinstance(data, list):
-                    # Compara cada item da lista `data` com os itens de `reference` (assumindo uma verificação parcial de correspondência)
-                    for item in data:
-                        if item not in reference:
-                            raise AssertionError(f"Item '{item}' não encontrado na referência.")
-                else:
-                    # Para dados primitivos, verifica igualdade direta com `reference`
-                    if data != reference:
-                        raise AssertionError(f"Valor incorreto: esperado '{reference}', mas encontrado '{data}'")
+        # Verificação dos campos obrigatórios
+        for required_field in required_fields:
+            if required_field not in data:
+                raise AssertionError(f"Campo obrigatório '{required_field}' ausente em 'data'.")
+        isinstance()
+        # Função auxiliar para verificar se o valor corresponde a pelo menos um dos tipos esperados
+        def is_valid_type(value, expected_types):
+            type_mapping = {
+                'string': str,
+                'integer': int,
+                'number': float,
+                'boolean': bool,
+                'date': str  # Validado inicialmente como string
+            }
+            # Adiciona verificação específica para datas
+            for expected_type in expected_types:
+                if expected_type == 'date':
+                    try:
+                        datetime.datetime.strptime(value, "%Y-%m-%d")  # Exemplo de formato de data
+                        return True
+                    except (ValueError, TypeError):
+                        continue
+                elif isinstance(value, type_mapping.get(expected_type, object)):
+                    return True
+            return False
 
-            elif by == 'snapshot':
-                # Verifica se cada item de `reference` está presente e correto em `data`
-                if isinstance(reference, dict):
-                    for key, value in reference.items():
-                        if key in data and data[key] != value:
-                            raise AssertionError(f"Valor incorreto para '{key}': esperado '{value}', mas encontrado '{data.get(key)}'")
-                elif isinstance(reference, list):
-                    # Verifica se todos os itens de `reference` estão em `data`
-                    for item in reference:
-                        if item not in data:
-                            raise AssertionError(f"Item '{item}' da referência não encontrado no dado.")
-                else:
-                    # Para dados primitivos, verifica igualdade direta com `data`
-                    if reference != data:
-                        raise AssertionError(f"Valor incorreto: esperado '{reference}', mas encontrado '{data}'")
-            else:
-                raise Exception("Formato 'by' inválido")
-        else:
-            raise Exception("Formato 'mode' inválido")
+        # Verificação dos tipos para cada campo em 'data'
+        for key, value in data.items():
+            expected_types = properties.get(key, {}).get('type', [])
+            if not expected_types:
+                raise TypeError(f"O campo '{key}' não possui um tipo definido no schema.")
 
+            # Checa se o valor está dentro dos tipos esperados
+            if not is_valid_type(value, expected_types):
+                expected_type_str = ', '.join(expected_types)
+                raise TypeError(f"Tipo incorreto para '{key}': esperado {expected_type_str}, mas encontrado '{type(value).__name__}'")
 
-    def assert_type(self, data: dict):
-        raise NotImplementedError()
-
-
-
+        
 
 class BaseValidatorManager:
     pass
@@ -270,6 +476,22 @@ class NoConsole(BaseOutput):
         print(message)
         pass
 
+class SchemaContext:
+    pass
+
+class SerialType(ABC):
+
+    @abstractmethod
+    def acceptable_field_type(self) -> tuple:
+        pass
+
+    @abstractmethod
+    def validate(self, field: SchemaContext):
+        pass
+
+    @abstractmethod
+    def schema_format(self) -> str:
+        pass
 
 
 from rich.console import Console
@@ -351,69 +573,136 @@ class DefaultSchemaManager:
         self.transformers = []
         self.serializer = serializer
         self.validator = validator
+        self.types : dict[bool, list[SerialType]] = {
+            True: [],
+            False: []
+        }
 
-    def create_contract(self, new_type: str, func_validator, include_nested: bool):
-        self.transformers.append((new_type, func_validator, include_nested))
+    def create_mapping_type(self, serialType: SerialType, propagate: bool = True):
+        self.types[propagate].append(serialType)
 
-    def build_schema_sketch(self, obj, transformers):
-        """Gera um esquema de tipos a partir do objeto fornecido."""
-        if isinstance(obj, dict):
-            schema_type = ['object']
-            schema = {'type': schema_type, 'properties': {}, 'required': []}
-            n_transformers = self.apply_transformer(transformers, schema_type, obj)
+    from collections.abc import Mapping, Sequence
 
+    def validate_all_values(self, data: any):
+        file = self.serializer.data
+        ref = file[0]['data']
+        
+        # Verifica se `data` e `ref` são estruturalmente idênticos
+        return data == ref
 
-            for key, value in obj.items():
-                schema['properties'][key] = self.build_schema_sketch(value, transformers=n_transformers)
-                schema['required'].append(key)  # Por padrão, todos os campos são obrigatórios
-
-            return schema
-        elif isinstance(obj, list):
-            if obj:
-                # Assume que todos os itens da lista são do mesmo tipo
-                schema_type = ['array']
-                n_transformers = self.apply_transformer(transformers, schema_type, obj)
-                schema = {'type': schema_type, 'items': self.build_schema_sketch(obj[0], n_transformers)}
+    def validate_partial_values(self, data: any, reference: str):
+        file = self.serializer.data
+        ref = file[0]['data']
+        
+        def recursive_compare(sub_data, sub_ref, mode):
+            """Função auxiliar recursiva para comparar estruturas aninhadas."""
+            
+            if isinstance(sub_data, Mapping) and isinstance(sub_ref, Mapping):
+                # Comparação de dicionários
+                if mode == 'input':
+                    # `sub_data` deve estar contido em `sub_ref`
+                    return all(
+                        key in sub_ref and recursive_compare(value, sub_ref[key], mode)
+                        for key, value in sub_data.items()
+                    )
+                elif mode == 'snapshot':
+                    # `sub_ref` deve estar contido em `sub_data`
+                    return all(
+                        key in sub_data and recursive_compare(sub_data[key], value, mode)
+                        for key, value in sub_ref.items()
+                    )
+            
+            elif isinstance(sub_data, Sequence) and isinstance(sub_ref, Sequence) and not isinstance(sub_data, str):
+                # Comparação de listas
+                if mode == 'input':
+                    # Todos os itens de `sub_data` devem estar em `sub_ref`
+                    return all(any(recursive_compare(item, ref_item, mode) for ref_item in sub_ref) for item in sub_data)
+                elif mode == 'snapshot':
+                    # Todos os itens de `sub_ref` devem estar em `sub_data`
+                    return all(any(recursive_compare(data_item, item, mode) for data_item in sub_data) for item in sub_ref)
+            
             else:
-                schema = {'type': schema_type, 'items': {}}
-            return schema
-        elif isinstance(obj, str):
-            schema_type = ['string']
-            self.apply_transformer(transformers, schema_type, obj)
-            return {'type': schema_type}
-        elif isinstance(obj, int):
-            schema_type = ['integer']
-            self.apply_transformer(transformers, schema_type, obj)
-            return {'type': schema_type}
-        elif isinstance(obj, float):
-            schema_type = ['number']
-            self.apply_transformer(transformers, schema_type, obj)
-            return {'type': schema_type}
-        elif isinstance(obj, bool):
-            schema_type = ['boolean']
-            self.apply_transformer(transformers, schema_type, obj)
-            return {'type': schema_type}
-        elif obj is None:
-            return {'type': 'null'}
+                # Comparação direta para tipos primitivos ou casos base
+                return sub_data == sub_ref
+
+        if reference == 'input':
+            return recursive_compare(data, ref, 'input')
+        elif reference == 'snapshot':
+            return recursive_compare(data, ref, 'snapshot')
         else:
-            raise TypeError(f'Unsupported type: {type(obj)}')
+            raise NotImplementedError(f"Referência '{reference}' não implementada.")
 
-    def apply_transformer(self, transformers, schema_type, obj):
-        nested_transformer = []
-        for transformer in transformers:
-            new_type, func_validator, include_nested = transformer
-            schemaContext = SchemaContext(None, field = obj)
-            state = {'status' : 'not initialized'}
-            schemaContext = hook_status_in_context(schemaContext, state = state)
-            func_validator(schemaContext)
 
-            if schemaContext.get_status() == 'approved':
-                schema_type.append(new_type)
+    def validate_all_schema(self, obj):
 
-            if include_nested:
-                nested_transformer.append(transformer)
+        ref = file[0]['schema']
+        for should_propagate, types in self.types.items():
+            if should_propagate:
+                schema_type_aggregator = []
+                for serial_type in types:
+                    instance = serial_type()
+                    if type(obj) in instance.acceptable_field_type():
+                        schema_context = SchemaContext(NoConsole(), field = obj)
+                        silent = {'status' : 'pending'}
+                        schema_context = hook_status_in_context(schema_context, silent)
+                        step = Step("", instance.validate, isolated = False)
+                        step.execute(schema_context, event_loop=None, thread_pool_executor=None)
+                        if silent['status'] == 'approved':
+                            schema_type_aggregator.append(instance.schema_format())
 
-        return nested_transformer
+                schema_format = smart_append(*schema_type_aggregator)
+                if isinstance(obj, dict):
+                    properties = {}
+                    required = []
+                    schema_format['properties'] = properties
+                    schema_format['required'] = required
+
+                    for key, value in obj.items():
+                        properties[key] = self.build_schema_sketch(value)
+                        required.append(key)
+                elif isinstance(obj, list):
+                    items = [self.build_schema_sketch(rst) for rst in smart_unique_iterable(obj)]
+                    schema_format['items'] = items
+            else:
+                pass
+                # raise NotImplementedError("to com preguiça de fazer esse")
+
+
+    def build_schema_sketch(self, obj):
+        schema_formats = []
+        for should_propagate, types in self.types.items():
+            if should_propagate:
+                schema_type_aggregator = []
+                for serial_type in types:
+                    instance = serial_type()
+                    if type(obj) in instance.acceptable_field_type():
+                        schema_context = SchemaContext(NoConsole(), field = obj)
+                        silent = {'status' : 'pending'}
+                        schema_context = hook_status_in_context(schema_context, silent)
+                        step = Step("", instance.validate, isolated = False)
+                        step.execute(schema_context, event_loop=None, thread_pool_executor=None)
+                        if silent['status'] == 'approved':
+                            schema_type_aggregator.append(instance.schema_format())
+
+                schema_format = smart_append(*schema_type_aggregator)
+                if isinstance(obj, dict):
+                    properties = {}
+                    required = []
+                    schema_format['properties'] = properties
+                    schema_format['required'] = required
+
+                    for key, value in obj.items():
+                        properties[key] = self.build_schema_sketch(value)
+                        required.append(key)
+                elif isinstance(obj, list):
+                    items = [self.build_schema_sketch(rst) for rst in smart_unique_iterable(obj)]
+                    schema_format['items'] = items
+
+                schema_formats.append(schema_format)
+            else:
+                pass
+                # raise NotImplementedError("to com preguiça de fazer esse")
+        return smart_append(*schema_formats)
 
     def calculate_hash(self, obj):
         """Calcula o hash do objeto para garantir a integridade."""
@@ -428,7 +717,7 @@ class DefaultSchemaManager:
             obj, description, metadata = obj_tuple
             
             schemas.append({
-                **self.build_schema_sketch(obj, self.transformers),
+                'schema' : self.build_schema_sketch(obj),
                 'description' : description,
                 'data' : obj,
                 'metadata' : metadata,
@@ -446,9 +735,6 @@ class DefaultSchemaManager:
     def load(self):
         self.serializer.load()
 
-    def assert_type(self, data: dict):
-        # mesma ideia do assert_type com a diferença de que checa o tipo
-        pass 
 
 
 class PrototypeInstance:

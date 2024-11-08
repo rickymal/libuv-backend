@@ -7,3 +7,4 @@ env/
 *.java
 *.class
 *.jar
+dist/
