@@ -1,7 +1,7 @@
 # main.py
-from lib.lexer import Lexer
-from lib.parser import Parser
-from lib.interpreter import Interpreter
+from apps.lexer import Lexer
+from apps.parser import Parser
+from apps.interpreter import Interpreter
 import os
 
 class Language:

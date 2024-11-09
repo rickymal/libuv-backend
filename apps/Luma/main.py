@@ -7,7 +7,7 @@ ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.insert(0, ROOT_DIR)
 
 # Definição dos parsers básicos
-from lib.finders import ForwardFinder, ListParser, LiteralFinder, ObjectParser, PatternParser, PrototypeContext, RegexFinder, extract
+from apps.Luma.finders import ForwardFinder, ListParser, LiteralFinder, ObjectParser, PatternParser, PrototypeContext, RegexFinder, extract
 
 
 ctx_root = PrototypeContext(name='root')

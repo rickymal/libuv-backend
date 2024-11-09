@@ -8,7 +8,7 @@ sys.path.insert(0, ROOT_DIR)
 
 
 import pytest
-from lib.finders import (
+from apps.Luma.finders import (
     Prototype,
     PrototypeContext,
     Token,
