@@ -1,229 +1,373 @@
-# Cria o contexto raiz para o parser chamado 'root'.
-# Este contexto irá conter todos os parsers para diferentes tokens e padrões.
-# PrototypeContext simula o conceito de protótipo como no JavaScript.
-# Possui métodos como 'chain_new_context' para criar um novo contexto com acesso a todas as variáveis do contexto pai,
-# mas o pai não vê as variáveis do contexto filho.
-# Também possui métodos 'set' e 'get' para armazenar e recuperar valores.
-# Isso é importante para atribuir exclusividade aos Finders, permitindo criar um contexto filho
-# onde um padrão pode aproveitar a exclusividade, garantindo melhor consistência na geração do parser.
-# O parâmetro 'name' é apenas para identificação (útil para depuração).
+import re
+from collections import defaultdict
+from dataclasses import dataclass, field
+from enum import Enum, auto
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
-# from apps.Luma.ast import ClassicInputStream, EndOfFileFinder, LiteralFinder, PatternFinder, PrototypeContext, RegexFinder
 
-from lib.ast import EndOfFileFinder, LiteralFinder, PatternFinder, PrototypeContext, RegexFinder
+import yaml
+from typing import Any, Dict
 
-ctx_root = PrototypeContext(name='root')
 
-# LiteralFinder é um objeto usado para buscar ocorrências exatas de padrões.
+import dataclasses
+from typing import Any, Dict
 
-# Define parsers literais para vários símbolos.
-open_bracket = LiteralFinder(pattern='<')
-close_bracket = LiteralFinder(pattern='>')
-slash = LiteralFinder(pattern='/')
-equal_sign = LiteralFinder(pattern='=')
-colon = LiteralFinder(pattern=':')
-open_key = LiteralFinder(pattern='{')
-close_key = LiteralFinder(pattern='}')
+def convert_to_dict(obj: Any) -> Any:
+    """
+    Converte um objeto dataclass para um dicionário de forma recursiva.
+    Se o objeto não for uma dataclass, retorna o objeto como está.
 
-# Adiciona esses parsers ao contexto raiz com suas respectivas chaves.
-ctx_root.set("OPEN_BRACKET", open_bracket)
-ctx_root.set("CLOSE_BRACKET", close_bracket)
-ctx_root.set("SLASH", slash)
-ctx_root.set("EQUAL_SIGN", equal_sign)
-ctx_root.set("COLON", colon)
-ctx_root.set("OPEN_KEY", open_key)
-ctx_root.set("CLOSE_KEY", close_key)
+    Args:
+        obj (Any): O objeto a ser convertido.
 
-# Cria um parser para identificadores usando expressões regulares.
-# Um identificador começa com uma letra ou underscore, seguido por qualquer número de letras, dígitos, underscores ou pontos.
-# Semelhante ao LiteralFinder, mas usa regex para correspondência de padrões.
-# Todos os finders possuem métodos em comum; eles retornam uma lista de dicionários que incluem:
-# linha e coluna inicial onde foi encontrado, linha e coluna final e o valor em si.
-# Finders também possuem parâmetros opcionais chamados 'dim' (dimensões).
-# Imagine que os finders são construídos para criar uma árvore sintática (que será melhor explicada abaixo).
-# No entanto, a árvore criada terá uma estrutura flexível de hipergrafo ou hiperarcos (a definir ainda),
-# onde não importa onde os nós estejam; podemos conectá-los em qualquer ponto através das dimensões.
-# Isso facilita do uso por parte do interpretador.
-# Por exemplo, suponha que eu queira que meu interpretador leia apenas Finders de natureza 'statement'.
-# Posso criar uma dimensão para especificar ao interpretador que desejo que ele leia apenas os nós na dimensão 'statement'.
-# Todos os nós com identificadores estarão facilmente conectados, como se fosse uma dimensão à parte da árvore.
-# Podemos ter um nó neto que se conecta diretamente a um nó avô, por exemplo.
-# Portanto, temos por 'default' a dimensão física, que é a dimensão com a qual trabalhamos por padrão,
-# e podemos adicionar mais dimensões passando uma tupla com as dimensões em um parâmetro chamado 'dim'.
-# Basicamente, cada 'finder' é um nó; a construção padrão abaixo conectará os nós na dimensão física,
-# que terá o nome 'default', por exemplo.
+    Returns:
+        Any: O dicionário resultante ou o objeto original se não for uma dataclass.
+    """
+    if dataclasses.is_dataclass(obj):
+        return dataclasses.asdict(obj)
+    elif isinstance(obj, list):
+        return [convert_to_dict(item) for item in obj]
+    elif isinstance(obj, dict):
+        return {key: convert_to_dict(value) for key, value in obj.items()}
+    else:
+        return obj
 
-identifier_finder = RegexFinder(pattern=r'[a-zA-Z_][a-zA-Z0-9_\.]*')
 
-# Adiciona o 'identifier_finder' ao contexto raiz com a chave 'A_IDENTIFIER'.
-ctx_root.set("A_IDENTIFIER", identifier_finder)
+def export_dict_to_yaml_file(data: Dict[str, Any], file_path: str) -> None:
+    """
+    Exporta um dicionário para um arquivo YAML.
 
-# Cria um parser para literais de string delimitados por aspas duplas, suportando caracteres escapados.
-# O parâmetro 'dim' especifica que este finder pertence à dimensão 'uma_dimensão'.
-# Neste caso específico, foi adicionado apenas para exemplificar o conceito de dimensão.
-string_finder = RegexFinder(pattern=r'"(?:\\.|[^"\\])*"', dim=("uma_dimensão",))
-
-# Adiciona o 'string_finder' ao contexto raiz com a chave 'STRING'.
-ctx_root.set("STRING", string_finder)
-
-# Define 'B_IDENTIFIER' como um padrão que corresponde a 'LIST', 'OBJECT' ou 'A_IDENTIFIER'.
-b_identifier = PatternFinder(pattern="&LIST | &OBJECT | &A_IDENTIFIER", context=(ctx_root,))
-
-# Adiciona 'b_identifier' ao contexto raiz.
-ctx_root.set("B_IDENTIFIER", b_identifier)
-
-# Define 'LIST' como um padrão para listas delimitadas por colchetes.
-# O asterisco indica que pode haver mais de uma ocorrência.
-# A interrogação mostra que o finder é opcional; ele pode aparecer ou não.
-# O parêntese faz com que os comandos de asterisco e interrogação sejam aplicados ao conjunto de finders dentro do parentese
-# neste caso COMMA e B_IDENTIFIER.
-list_identifier = PatternFinder(pattern="&OPEN_BRACKET &B_IDENTIFIER (&COMMA &B_IDENTIFIER)*? &CLOSE_BRACKET", context=(ctx_root,))
-
-# Adiciona 'list_identifier' ao contexto raiz sob a chave 'LIST'.
-ctx_root.set("LIST", list_identifier)
-
-# Define 'OBJECT' como um padrão para pares chave-valor delimitados por chaves.
-object_pattern = PatternFinder(pattern="&OPEN_KEY (&A_IDENTIFIER &COLON &B_IDENTIFIER)*? &CLOSE_KEY", context=(ctx_root,))
-
-# Adiciona 'object_pattern' ao contexto raiz sob a chave 'OBJECT'.
-ctx_root.set("OBJECT", object_pattern)
-
-# Cria um 'attribute_parser' que corresponde a uma atribuição de atributo.
-# Um atributo consiste em um 'A_IDENTIFIER', seguido por '=' ou ':', e então um 'B_IDENTIFIER'.
-attribute_parser = PatternFinder(pattern="&A_IDENTIFIER (&EQUAL_SIGN | &COLON) &B_IDENTIFIER", context=(ctx_root,))
-
-# Cria um novo contexto interno como filho de 'ctx_root' para parsing de XML.
-# O contexto filho tem acesso a todas as variáveis do contexto pai, mas pode ter suas próprias substituições e seus próprios finders exclusivos.
-internal_context_xml = ctx_root.chain_new_context(name='internal')
-
-# Adiciona 'attribute_parser' ao contexto interno com a chave 'ATTRIBUTE'.
-internal_context_xml.set("ATTRIBUTE", attribute_parser)
-
-# Define um padrão para múltiplos atributos (zero ou mais 'ATTRIBUTE's).
-attributes_pattern = "(&ATTRIBUTE)*"
-
-# Cria um 'attributes_parser' usando o padrão.
-attributes_parser = PatternFinder(pattern=attributes_pattern, context=internal_context_xml)
-
-# Adiciona 'attributes_parser' ao contexto interno sob a chave 'ATTRIBUTES'.
-internal_context_xml.set("ATTRIBUTES", attributes_parser)
-
-# Adiciona um 'EndOfFileFinder' ao contexto raiz para reconhecer o fim da entrada da string ou do stream passado como parâmetro.
-ctx_root.set("EOF", EndOfFileFinder())
-
-# --- Parsing XML ---
-
-# Define 'OPEN_TAG' como um padrão para tags de abertura de XML, possivelmente com atributos.
-# Usa o contexto 'internal_context_xml' para fornecer o parsing de atributos.
-# Perceba que passamos sempre tuplas de contextos; ou seja, podemos ter mais de um contexto.
-# No caso de passarmos o parâmetro neste finder em específico, ele irá utilizar apenas os contextos passados.
-# Porém, como 'internal_context_xml' é filho do 'ctx_root', ele terá acesso a todas as declarações de 'ctx_root'.
-# Assim que sairmos do finder 'OPEN_TAG', voltaremos a usar o contexto 'ctx_root'.
-open_tag = PatternFinder(pattern="&OPEN_BRACKET &B_IDENTIFIER &ATTRIBUTES? &CLOSE_BRACKET", context=(internal_context_xml,))
-
-# Adiciona 'open_tag' ao contexto raiz.
-ctx_root.set("OPEN_TAG", open_tag)
-
-# Define 'PROGRAM' como um ou mais 'XML_STATEMENT's ou 'REQUIRE_STATEMENT's.
-program = PatternFinder(pattern="(&XML_STATEMENT | &REQUIRE_STATEMENT)*", context=(ctx_root,))
-
-# Adiciona 'program' ao contexto raiz.
-ctx_root.set("PROGRAM", program)
-
-# Define 'CLOSE_TAG' como um padrão para tags de fechamento de XML.
-# Aqui temos um exemplo de finder com personalidade (a título de exemplificação).
-# As personalidades serão explicadas adiante.
-close_tag = PatternFinder(pattern="&OPEN_BRACKET &SLASH &B_IDENTIFIER &CLOSE_BRACKET", personality=personality.LAZY, context=(ctx_root,))
-
-# Adiciona 'close_tag' ao contexto raiz.
-ctx_root.set("CLOSE_TAG", close_tag)
-
-# Define 'XML_STATEMENT' como um 'OPEN_TAG' seguido por um 'PROGRAM' e um 'CLOSE_TAG'.
-xml_statement = PatternFinder(pattern="&OPEN_TAG &PROGRAM &CLOSE_TAG", context=(ctx_root,))
-
-# Adiciona 'xml_statement' ao contexto raiz.
-ctx_root.set("XML_STATEMENT", xml_statement)
-
-# Cria um parser para a palavra-chave 'require'.
-require_literal = LiteralFinder(pattern="require")
-
-# Adiciona 'require_literal' ao contexto raiz.
-ctx_root.set("REQUIRE_LITERAL", require_literal)
-
-# Define 'REQUIRE_STATEMENT' como 'require' seguido por um 'B_IDENTIFIER'.
-require_statement = PatternFinder(pattern="&REQUIRE_LITERAL &B_IDENTIFIER", context=(ctx_root,))
-
-# Adiciona 'require_statement' ao contexto raiz.
-ctx_root.set("REQUIRE_STATEMENT", require_statement)
-
-# Define o parser raiz que irá analisar toda a entrada.
-# Ele corresponde a um 'PROGRAM' seguido por 'EOF'.
-# O contexto passado é 'ctx_root', então todas as definições estão disponíveis.
-root_parser = PatternFinder(pattern="&PROGRAM &EOF", context=ctx_root)
-
-"""
-Aqui você tem um exemplo onde pode passar o contexto.
-Como a nova aplicação iniciará com 'root_parser', isso significa que todo o contexto passado no parâmetro 'context'
-estará disponível para todos os filhos, já que este é o nó pai de todos.
-"""
-
-# Código de exemplo para analisar.
-code = """
-<code>
-    require Ship
-    <wolfram.Math instance=[Ship, Algo] anotherParameter={identifier: "Henrique"} thirdParameter=<anotherXmlThing></anotherXmlThing>>
-    </wolfram.Math>
-</code>
-"""
-
-# Remove espaços em branco iniciais e finais do 'code' e armazena o resultado em 'text'.
-text = code.strip()
+    Args:
+        data (Dict[str, Any]): O dicionário a ser exportado.
+        file_path (str): O caminho do arquivo onde o YAML será salvo.
+    """
+    try:
+        with open(file_path, 'w', encoding='utf-8') as yaml_file:
+            yaml.dump(data, yaml_file, default_flow_style=False, allow_unicode=True)
+        print(f"Dados exportados com sucesso para {file_path}")
+    except Exception as e:
+        print(f"Erro ao exportar para YAML: {e}")
 
 
 
-# [TODO]
-# Inicializa o parser com o parser raiz, fluxo de entrada e interpretador.
-# Recebe o 'root_parser' que contém a árvore, o 'input_stream' que pode ser uma string completa ou
-# um stream, podendo receber os dados dinamicamente.
-
-def init(root_parser, input_stream, transpiler):
-    pass
-
-# Classe responsável por fornecer os dados para o 'root_parser'.
-"""
-Imagine que o 'root_parser' irá fazer validações com lookahead de tamanho dinâmico para identificar
-quais finders deverão ser utilizados na sequência. Ele irá solicitar ao 'input_stream' os dados necessários.
-Essa classe e os finders estarão em constante interação para criar a árvore sintática.
-
-É comum que haja indecisão sobre qual finder utilizar, e isso é bem visível no 'PatternFinder'. Exemplos:
-Supondo que (&I1 | &I2) seja o ponto de entrada (root): nessa situação, não sabemos ainda qual identificador escolher.
-Nesse caso, nossa lógica tem que "desmontar" (provavelmente terá um método interno no 'PatternFinder' chamado 'umount')
-até os finders primitivos que são os de regex e os literais, e depois aplicar a lógica de decisão para saber qual
-escolher baseado no lookahead de tamanho dinâmico (não há porque se preocupar com otimizaçao por enquanto).
-
-Outro exemplo:
-(&I1 | &I2) &I3? &I4* &I5: Nesse caso, I1 ou I2 podem assumir a primeira posição, I3 pode ser opcional (posição 2),
-I4 pode aparecer zero ou mais vezes (posição 2 por que o I3 não aparece as vezes ou posição 3), e I5 é obrigatório no final (podendo assumir no mínimo a posição 4 caso não tenha I3 ou adiante). Essas posições que eu falo são posições virtuais, visto que o finde pode ser desmontado em posições menores, então aqui temos posição, que chamaremos de endereço, mas seŕa como se fosse endereço virtual (que nem endereço virtual em memória RAM), o real só saberemos após toda a desmontagem, é como se fosse memória virtual, não igual. 
-Nessas situações, a lógica deve ter um sistema de delegação de finders: por exemplo, ao ler o texto a ser parseado
-caractere a caractere, podemos ter múltiplas opções (após o 'umount'). Dependendo da personalidade do finder, ele pode:
-- Continuar lendo junto com o seguinte (personality.COLLABORATIVE)
-- Delegar para o outro finder assim que ele for capaz de ler (personality.LAZY ou personality.DELEGATOR) 
-- Ler até não poder mais (personality.BOSSY)
-- Outros comportamentos (podem haver outras opções)
-
-Uma das personalidades será o default
-
-"""
+# Definições de Enums
+class Personality(Enum):
+    LAZY = auto()          # Delegar o proprietário para o novo token encontrado
+    DELEGATOR = auto()    # Similar ao LAZY
+    COLLABORATIVE = auto()# Leitura em conjunto com novos tokens
+    BOSSY = auto()        # Não delega, lê até o final antes de passar para o próximo token
 
 
-# Inicializa o parser com os parâmetros fornecidos.
-# Contém o 'root_parser', o 'input_stream' que será da classe 'ASTStreamingText' e o 'transpiler'.
-# O 'transpiler' pode ser um interpretador ou um compilador; fica a critério do uso.
-# O 'input_stream' e o 'root_parser' estarão em constante interação, onde o 'input_stream' fornece os dados conforme o 'root_parser' solicita.
-init(root_parser=root_parser, input_stream=ClassicInputStream(text), transpiler=YAMLExporter())
+class Dimension(Enum):
+    HIDDEN = auto()
+    VISIT = auto()
 
-# Analisa o texto usando o parser raiz para produzir a árvore de parsing 'root'.
-root = root_parser.parse()
 
-# Escaneia o texto para construir a árvore de parsing.
-root.scan(text)
+class PropagationType(Enum):
+    UNDEFINED = auto()
+    ZERO_TO_ONE = auto()
+    ZERO_TO_MANY = auto()
+    ONE_TO_MANY = auto()
+
+
+# Definição do Token
+@dataclass
+class Token:
+    name: str
+    pattern: str
+    is_primitive: bool
+    extract: Callable[[Dict[str, Any], str], List[Tuple[int, int, str]]]
+    contexts: List['ParserContext'] = field(default_factory=list)
+    is_owner: bool = False
+    personality: Optional[Personality] = None
+    next_tokens: List['Token'] = field(default_factory=list)
+    specification: Dict[str, Any] = field(default_factory=dict)
+    value: Optional[Dict[str, Union[int, str]]] = None
+
+
+# Definição do Contexto de Parsing
+class ParserContext:
+    def __init__(self, name: str = 'root', parent: Optional['ParserContext'] = None):
+        self.name = name
+        self.parent = parent
+        self.variables: Dict[str, Any] = {}
+        self.tokens: Dict[str, Token] = {}
+
+    def set_token(self, name: str, token_info: Dict[str, Any]):
+        token = Token(
+            name=name,
+            pattern=token_info.get('pattern', ''),
+            is_primitive=token_info.get('is_primitive', False),
+            extract=token_info.get('extract', lambda tk, txt: []),
+            is_owner=token_info.get('is_owner', False),
+            personality=token_info.get('personality', None),
+            contexts=list(token_info.get('contexts', ())),
+        )
+        self.tokens[name] = token
+
+    def get_token(self, name: str) -> Optional[Token]:
+        return self.tokens.get(name) or (self.parent.get_token(name) if self.parent else None)
+
+    def set_variable(self, key: str, value: Any):
+        self.variables[key] = value
+
+    def get_variable(self, key: str) -> Any:
+        return self.variables.get(key) or (self.parent.get_variable(key) if self.parent else None)
+
+
+# Funções de Encontrar Tokens
+def literal_finder(pattern: str, text: str) -> List[Tuple[int, int, str]]:
+    tokens = pattern.strip().split()
+    matches = []
+    pos = 0
+    for token in tokens:
+        if text.startswith(token, pos):
+            matches.append((pos, pos + len(token), token))
+            pos += len(token)
+        else:
+            break
+    return matches
+
+
+def regex_finder(token_info: Dict[str, Any], text: str) -> List[Tuple[int, int, str]]:
+    pattern = token_info['pattern']
+    matches = []
+    for match in re.finditer(pattern, text):
+        matches.append((match.start(), match.end(), match.group()))
+    return matches
+
+
+def pattern_finder(pattern: str, text: str) -> List[Tuple[int, int, str]]:
+    tokens = pattern.strip().split()
+    return [(0, len(text), text)] if ' '.join(tokens) == text else []
+
+
+def eof_finder(token_info: Dict[str, Any], text: str) -> List[Tuple[int, int, str]]:
+    return [(0, 0, 'EOF')] if text == '' else []
+
+
+# Funções de Match
+def match_literal(token_pattern: str, text: str) -> Optional[str]:
+    return text if text == token_pattern else None
+
+
+def match_regex(token_pattern: str, text: str) -> Optional[str]:
+    match = re.fullmatch(token_pattern, text)
+    return match.group() if match else None
+
+
+# Construção da Gramática
+def build_grammar() -> ParserContext:
+    parser_context = ParserContext(name='parser')
+    token_context = ParserContext(name='token', parent=parser_context)
+
+    TOKEN_SPECIFICATION = [
+        ('OPEN_BRACKET', {'pattern': r'<', 'is_primitive': True, 'extract': regex_finder}),
+        ('CLOSE_BRACKET', {'pattern': r'>', 'is_primitive': True, 'extract': regex_finder}),
+        ('SLASH', {'pattern': r'/', 'is_primitive': True, 'extract': regex_finder}),
+        ('EQUAL_SIGN', {'pattern': r'=', 'is_primitive': True, 'extract': regex_finder}),
+        ('COLON', {'pattern': r':', 'is_primitive': True, 'extract': regex_finder}),
+        ('OPEN_KEY', {'pattern': r'\{', 'is_primitive': True, 'extract': regex_finder}),
+        ('CLOSE_KEY', {'pattern': r'\}', 'is_primitive': True, 'extract': regex_finder}),
+        ('COMMA', {'pattern': r',', 'is_primitive': True, 'extract': regex_finder}),
+        ('REQUIRE_LITERAL', {'pattern': r'require', 'is_primitive': True, 'extract': regex_finder}),
+        ('STRING', {'pattern': r'"(?:\\.|[^"\\])*"', 'is_primitive': True, 'extract': regex_finder}),
+        ('A_IDENTIFIER', {'pattern': r'[a-zA-Z_][a-zA-Z0-9_\.]*', 'is_primitive': True, 'extract': regex_finder}),
+        ('NEWLINE', {'pattern': r'\n', 'is_primitive': True, 'extract': regex_finder}),
+        ('SKIP', {'pattern': r'[ \t]+', 'is_primitive': True, 'extract': regex_finder}),
+        ('MISMATCH', {'pattern': r'.', 'is_primitive': True, 'extract': regex_finder}),
+    ]
+
+    for name, info in TOKEN_SPECIFICATION:
+        token_context.set_token(name, info)
+
+    # Definindo tokens complexos
+    complex_tokens = {
+        "B_IDENTIFIER": {
+            "pattern": "&LIST|&OBJECT|&A_IDENTIFIER",
+            "contexts": [token_context],
+            "scan": pattern_finder,
+            "is_owner": False
+        },
+        "LIST": {
+            "pattern": "&OPEN_BRACKET &B_IDENTIFIER (&COMMA &B_IDENTIFIER)*? &CLOSE_BRACKET",
+            "contexts": [token_context],
+            "scan": pattern_finder,
+            "is_owner": False
+        },
+        "OBJECT": {
+            "pattern": "&OPEN_KEY (&A_IDENTIFIER &COLON &B_IDENTIFIER)*? &CLOSE_KEY",
+            "contexts": [token_context],
+            "scan": pattern_finder,
+            "is_owner": False
+        },
+        "ATTRIBUTE": {
+            "pattern": "&A_IDENTIFIER (&EQUAL_SIGN|&COLON) &B_IDENTIFIER",
+            "contexts": [token_context],
+            "scan": pattern_finder,
+            "is_owner": False
+        },
+        "ATTRIBUTES": {
+            "pattern": "(&ATTRIBUTE)*",
+            "contexts": [token_context],
+            "scan": pattern_finder,
+            "is_owner": False
+        },
+        "EOF": {
+            "scan": eof_finder,
+            "is_owner": False,
+            "contexts": [token_context]
+        },
+        "OPEN_TAG": {
+            "pattern": "&OPEN_BRACKET &A_IDENTIFIER &ATTRIBUTES? &CLOSE_BRACKET",
+            "contexts": [token_context],
+            "scan": pattern_finder,
+            "is_owner": False
+        },
+        "PROGRAM": {
+            "pattern": "(&XML_STATEMENT|&REQUIRE_STATEMENT)*",
+            "contexts": [token_context],
+            "scan": pattern_finder,
+            "is_owner": False
+        },
+        "CLOSE_TAG": {
+            "pattern": "&OPEN_BRACKET &SLASH &B_IDENTIFIER &CLOSE_BRACKET",
+            "contexts": [token_context],
+            "scan": pattern_finder,
+            "is_owner": False
+        },
+        "XML_STATEMENT": {
+            "pattern": "&OPEN_TAG &PROGRAM &CLOSE_TAG",
+            "contexts": [token_context],
+            "scan": pattern_finder,
+            "is_owner": False
+        },
+        "REQUIRE_STATEMENT": {
+            "pattern": "&REQUIRE_LITERAL &A_IDENTIFIER",
+            "contexts": [token_context],
+            "scan": pattern_finder,
+            "is_owner": False
+        },
+        "ROOT": {
+            "pattern": "&PROGRAM &EOF",
+            "contexts": [token_context],
+            "scan": pattern_finder,
+            "is_owner": False,
+            "personality": Personality.LAZY
+        },
+        "TEST1": {
+            "pattern": "&OPEN_BRACKET &SLASH &CLOSE_BRACKET",
+            "contexts": [token_context],
+            "scan": pattern_finder,
+            "is_owner": False,
+            "personality": Personality.LAZY
+        },
+    }
+
+    for name, info in complex_tokens.items():
+        parser_context.set_token(name, info)
+
+    return parser_context
+
+
+# Função para Obter Token
+def get_value(value: str, contexts: List[ParserContext]) -> Tuple[Token, Optional[ParserContext]]:
+    for ctx in contexts:
+        token = ctx.get_token(value)
+        if token:
+            return token, ctx
+    raise ValueError(f"Token '{value}' não encontrado em nenhum contexto.")
+
+
+# Função Principal de Parsing
+def parse_code(parser_context: ParserContext, code: str):
+    actual_token = parser_context.get_token("TEST1")
+    if not actual_token:
+        raise ValueError("Token 'TEST1' não encontrado no contexto do parser.")
+
+    tokens_patterns = actual_token.pattern.split(" ")
+
+    tokens_list = []
+    for pattern in tokens_patterns:
+        cleaned_pattern = re.sub(r"[^a-zA-Z0-9_]", "", pattern)
+        token, ctx = get_value(cleaned_pattern, actual_token.contexts)
+        token.specification = analyze_pattern(pattern)
+        tokens_list.append(token)
+
+    # Linkando os tokens
+    for tk1, tk2 in zip(tokens_list, tokens_list[1:]):
+        tk1.next_tokens.append(tk2)
+
+    # Parsing do Código
+    pos = 0
+    batch_size = 1  # Pode ser ajustado conforme necessário
+    interval_start, interval_end = 0, batch_size
+    current_pos = 0
+
+    while current_pos < len(tokens_list):
+        if interval_end > len(code):
+            break
+
+        current_text = code[interval_start:interval_end]
+        current_token = tokens_list[current_pos]
+
+        if not current_token.is_primitive:
+            raise NotImplementedError("Parsing de tokens não primitivos não implementado.")
+
+        matches = current_token.extract(current_token.__dict__, current_text)
+        if len(matches) != 1:
+            raise NotImplementedError("Multiples matches ou nenhum match encontrado.")
+
+        match = matches[0]
+        current_token.value = {
+            'start': interval_start + match[0],
+            'end': interval_start + match[1],
+            'val': match[2],
+        }
+
+        interval_start = interval_end
+        interval_end += batch_size
+        current_pos += 1
+
+
+def analyze_pattern(pattern: str) -> Dict[str, Any]:
+    is_identifier = pattern == "&"
+    is_group = pattern.startswith("(") and pattern.endswith(")")
+    is_sequence = "|" in pattern
+
+    has_star = "*" in pattern[:-2]
+    has_question = "?" in pattern[:-2]
+    propagation = PropagationType.UNDEFINED
+
+    if has_star and has_question:
+        propagation = PropagationType.ZERO_TO_MANY
+    elif has_star:
+        propagation = PropagationType.ONE_TO_MANY
+    elif has_question:
+        propagation = PropagationType.ZERO_TO_ONE
+
+    return {
+        'is_identifier': is_identifier,
+        'is_group': is_group,
+        'propagation': propagation,
+        'in_sequence': is_sequence
+    }
+
+
+# Exemplo de Uso
+if __name__ == "__main__":
+    # Construir a gramática
+    parser_ctx = build_grammar()
+
+    # Código de exemplo para analisar
+    example_code = "</>"
+
+    # Executar o parsing
+    try:
+        parse_code(parser_ctx, example_code)
+        print("Parsing concluído com sucesso.")
+        export_dict_to_yaml_file(convert_to_dict(parser_ctx), "out.yaml")
+    except NotImplementedError as nie:
+        print(f"Funcionalidade não implementada: {nie}")
+    except Exception as e:
+        print(f"Erro durante o parsing: {e}")
