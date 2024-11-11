@@ -1,344 +1,353 @@
-&id001 !!python/object:__main__.ParserContext
-name: parser
-parent: null
-tokens:
-  ATTRIBUTE: !!python/object:__main__.Token
-    contexts:
-    - &id006 !!python/object:__main__.ParserContext
-      name: token
-      parent: *id001
-      tokens:
-        A_IDENTIFIER: !!python/object:__main__.Token
-          contexts: []
-          extract: &id002 !!python/name:__main__.regex_finder ''
-          is_owner: false
-          is_primitive: true
-          name: A_IDENTIFIER
-          next_tokens: []
-          pattern: '[a-zA-Z_][a-zA-Z0-9_\.]*'
-          personality: null
-          specification: {}
-          value: null
-        CLOSE_BRACKET: &id003 !!python/object:__main__.Token
-          contexts: []
-          extract: *id002
-          is_owner: false
-          is_primitive: true
-          name: CLOSE_BRACKET
-          next_tokens: []
-          pattern: '>'
-          personality: null
-          specification:
-            in_sequence: false
-            is_group: false
-            is_identifier: false
-            propagation: &id004 !!python/object/apply:__main__.PropagationType
-            - 1
-          value:
-            end: 3
-            start: 2
-            val: '>'
-        CLOSE_KEY: !!python/object:__main__.Token
-          contexts: []
-          extract: *id002
-          is_owner: false
-          is_primitive: true
-          name: CLOSE_KEY
-          next_tokens: []
-          pattern: \}
-          personality: null
-          specification: {}
-          value: null
-        COLON: !!python/object:__main__.Token
-          contexts: []
-          extract: *id002
-          is_owner: false
-          is_primitive: true
-          name: COLON
-          next_tokens: []
-          pattern: ':'
-          personality: null
-          specification: {}
-          value: null
-        COMMA: !!python/object:__main__.Token
-          contexts: []
-          extract: *id002
-          is_owner: false
-          is_primitive: true
-          name: COMMA
-          next_tokens: []
-          pattern: ','
-          personality: null
-          specification: {}
-          value: null
-        EQUAL_SIGN: !!python/object:__main__.Token
-          contexts: []
-          extract: *id002
-          is_owner: false
-          is_primitive: true
-          name: EQUAL_SIGN
-          next_tokens: []
-          pattern: '='
-          personality: null
-          specification: {}
-          value: null
-        MISMATCH: !!python/object:__main__.Token
-          contexts: []
-          extract: *id002
-          is_owner: false
-          is_primitive: true
-          name: MISMATCH
-          next_tokens: []
-          pattern: .
-          personality: null
-          specification: {}
-          value: null
-        NEWLINE: !!python/object:__main__.Token
-          contexts: []
-          extract: *id002
-          is_owner: false
-          is_primitive: true
-          name: NEWLINE
-          next_tokens: []
-          pattern: \n
-          personality: null
-          specification: {}
-          value: null
-        OPEN_BRACKET: !!python/object:__main__.Token
-          contexts: []
-          extract: *id002
-          is_owner: false
-          is_primitive: true
-          name: OPEN_BRACKET
-          next_tokens:
-          - &id005 !!python/object:__main__.Token
+!!python/object:__main__.ObjectGrammar
+hydrated_token:
+- &id006 !!python/object:__main__.Token
+  contexts: []
+  extract: &id001 !!python/name:__main__.regex_finder ''
+  is_owner: false
+  is_primitive: true
+  name: OPEN_BRACKET
+  next_tokens:
+  - &id003 !!python/object:__main__.Token
+    contexts: []
+    extract: *id001
+    is_owner: false
+    is_primitive: true
+    name: SLASH
+    next_tokens:
+    - &id004 !!python/object:__main__.Token
+      contexts: []
+      extract: *id001
+      is_owner: false
+      is_primitive: true
+      name: CLOSE_BRACKET
+      next_tokens: []
+      pattern: '>'
+      personality: null
+      specification:
+        in_sequence: false
+        is_group: false
+        is_identifier: false
+        propagation: &id002 !!python/object/apply:__main__.PropagationType
+        - 1
+      value: null
+    pattern: /
+    personality: null
+    specification:
+      in_sequence: false
+      is_group: false
+      is_identifier: false
+      propagation: *id002
+    value: null
+  pattern: <
+  personality: null
+  specification:
+    in_sequence: false
+    is_group: false
+    is_identifier: false
+    propagation: *id002
+  value: null
+- *id003
+- *id004
+parser_context: &id005 !!python/object:__main__.ParserContext
+  name: parser
+  parent: null
+  tokens:
+    ATTRIBUTE: !!python/object:__main__.Token
+      contexts:
+      - &id007 !!python/object:__main__.ParserContext
+        name: token
+        parent: *id005
+        tokens:
+          A_IDENTIFIER: !!python/object:__main__.Token
             contexts: []
-            extract: *id002
+            extract: *id001
             is_owner: false
             is_primitive: true
-            name: SLASH
-            next_tokens:
-            - *id003
-            pattern: /
+            name: A_IDENTIFIER
+            next_tokens: []
+            pattern: '[a-zA-Z_][a-zA-Z0-9_\.]*'
             personality: null
-            specification:
-              in_sequence: false
-              is_group: false
-              is_identifier: false
-              propagation: *id004
-            value:
-              end: 2
-              start: 1
-              val: /
-          pattern: <
-          personality: null
-          specification:
-            in_sequence: false
-            is_group: false
-            is_identifier: false
-            propagation: *id004
-          value:
-            end: 1
-            start: 0
-            val: <
-        OPEN_KEY: !!python/object:__main__.Token
-          contexts: []
-          extract: *id002
-          is_owner: false
-          is_primitive: true
-          name: OPEN_KEY
-          next_tokens: []
-          pattern: \{
-          personality: null
-          specification: {}
-          value: null
-        REQUIRE_LITERAL: !!python/object:__main__.Token
-          contexts: []
-          extract: *id002
-          is_owner: false
-          is_primitive: true
-          name: REQUIRE_LITERAL
-          next_tokens: []
-          pattern: require
-          personality: null
-          specification: {}
-          value: null
-        SKIP: !!python/object:__main__.Token
-          contexts: []
-          extract: *id002
-          is_owner: false
-          is_primitive: true
-          name: SKIP
-          next_tokens: []
-          pattern: '[ \t]+'
-          personality: null
-          specification: {}
-          value: null
-        SLASH: *id005
-        STRING: !!python/object:__main__.Token
-          contexts: []
-          extract: *id002
-          is_owner: false
-          is_primitive: true
-          name: STRING
-          next_tokens: []
-          pattern: '"(?:\\.|[^"\\])*"'
-          personality: null
-          specification: {}
-          value: null
-      variables: {}
-    extract: !!python/name:__main__.%3Clambda%3E ''
-    is_owner: false
-    is_primitive: false
-    name: ATTRIBUTE
-    next_tokens: []
-    pattern: '&A_IDENTIFIER (&EQUAL_SIGN|&COLON) &B_IDENTIFIER'
-    personality: null
-    specification: {}
-    value: null
-  ATTRIBUTES: !!python/object:__main__.Token
-    contexts:
-    - *id006
-    extract: !!python/name:__main__.%3Clambda%3E ''
-    is_owner: false
-    is_primitive: false
-    name: ATTRIBUTES
-    next_tokens: []
-    pattern: (&ATTRIBUTE)*
-    personality: null
-    specification: {}
-    value: null
-  B_IDENTIFIER: !!python/object:__main__.Token
-    contexts:
-    - *id006
-    extract: !!python/name:__main__.%3Clambda%3E ''
-    is_owner: false
-    is_primitive: false
-    name: B_IDENTIFIER
-    next_tokens: []
-    pattern: '&LIST|&OBJECT|&A_IDENTIFIER'
-    personality: null
-    specification: {}
-    value: null
-  CLOSE_TAG: !!python/object:__main__.Token
-    contexts:
-    - *id006
-    extract: !!python/name:__main__.%3Clambda%3E ''
-    is_owner: false
-    is_primitive: false
-    name: CLOSE_TAG
-    next_tokens: []
-    pattern: '&OPEN_BRACKET &SLASH &B_IDENTIFIER &CLOSE_BRACKET'
-    personality: null
-    specification: {}
-    value: null
-  EOF: !!python/object:__main__.Token
-    contexts:
-    - *id006
-    extract: !!python/name:__main__.%3Clambda%3E ''
-    is_owner: false
-    is_primitive: false
-    name: EOF
-    next_tokens: []
-    pattern: ''
-    personality: null
-    specification: {}
-    value: null
-  LIST: !!python/object:__main__.Token
-    contexts:
-    - *id006
-    extract: !!python/name:__main__.%3Clambda%3E ''
-    is_owner: false
-    is_primitive: false
-    name: LIST
-    next_tokens: []
-    pattern: '&OPEN_BRACKET &B_IDENTIFIER (&COMMA &B_IDENTIFIER)*? &CLOSE_BRACKET'
-    personality: null
-    specification: {}
-    value: null
-  OBJECT: !!python/object:__main__.Token
-    contexts:
-    - *id006
-    extract: !!python/name:__main__.%3Clambda%3E ''
-    is_owner: false
-    is_primitive: false
-    name: OBJECT
-    next_tokens: []
-    pattern: '&OPEN_KEY (&A_IDENTIFIER &COLON &B_IDENTIFIER)*? &CLOSE_KEY'
-    personality: null
-    specification: {}
-    value: null
-  OPEN_TAG: !!python/object:__main__.Token
-    contexts:
-    - *id006
-    extract: !!python/name:__main__.%3Clambda%3E ''
-    is_owner: false
-    is_primitive: false
-    name: OPEN_TAG
-    next_tokens: []
-    pattern: '&OPEN_BRACKET &A_IDENTIFIER &ATTRIBUTES? &CLOSE_BRACKET'
-    personality: null
-    specification: {}
-    value: null
-  PROGRAM: !!python/object:__main__.Token
-    contexts:
-    - *id006
-    extract: !!python/name:__main__.%3Clambda%3E ''
-    is_owner: false
-    is_primitive: false
-    name: PROGRAM
-    next_tokens: []
-    pattern: (&XML_STATEMENT|&REQUIRE_STATEMENT)*
-    personality: null
-    specification: {}
-    value: null
-  REQUIRE_STATEMENT: !!python/object:__main__.Token
-    contexts:
-    - *id006
-    extract: !!python/name:__main__.%3Clambda%3E ''
-    is_owner: false
-    is_primitive: false
-    name: REQUIRE_STATEMENT
-    next_tokens: []
-    pattern: '&REQUIRE_LITERAL &A_IDENTIFIER'
-    personality: null
-    specification: {}
-    value: null
-  ROOT: !!python/object:__main__.Token
-    contexts:
-    - *id006
-    extract: !!python/name:__main__.%3Clambda%3E ''
-    is_owner: false
-    is_primitive: false
-    name: ROOT
-    next_tokens: []
-    pattern: '&PROGRAM &EOF'
-    personality: &id007 !!python/object/apply:__main__.Personality
-    - 1
-    specification: {}
-    value: null
-  TEST1: !!python/object:__main__.Token
-    contexts:
-    - *id006
-    extract: !!python/name:__main__.%3Clambda%3E ''
-    is_owner: false
-    is_primitive: false
-    name: TEST1
-    next_tokens: []
-    pattern: '&OPEN_BRACKET &SLASH &CLOSE_BRACKET'
-    personality: *id007
-    specification: {}
-    value: null
-  XML_STATEMENT: !!python/object:__main__.Token
-    contexts:
-    - *id006
-    extract: !!python/name:__main__.%3Clambda%3E ''
-    is_owner: false
-    is_primitive: false
-    name: XML_STATEMENT
-    next_tokens: []
-    pattern: '&OPEN_TAG &PROGRAM &CLOSE_TAG'
-    personality: null
-    specification: {}
-    value: null
-variables: {}
+            specification: {}
+            value: null
+          CLOSE_BRACKET: *id004
+          CLOSE_KEY: !!python/object:__main__.Token
+            contexts: []
+            extract: *id001
+            is_owner: false
+            is_primitive: true
+            name: CLOSE_KEY
+            next_tokens: []
+            pattern: \}
+            personality: null
+            specification: {}
+            value: null
+          COLON: !!python/object:__main__.Token
+            contexts: []
+            extract: *id001
+            is_owner: false
+            is_primitive: true
+            name: COLON
+            next_tokens: []
+            pattern: ':'
+            personality: null
+            specification: {}
+            value: null
+          COMMA: !!python/object:__main__.Token
+            contexts: []
+            extract: *id001
+            is_owner: false
+            is_primitive: true
+            name: COMMA
+            next_tokens: []
+            pattern: ','
+            personality: null
+            specification: {}
+            value: null
+          EQUAL_SIGN: !!python/object:__main__.Token
+            contexts: []
+            extract: *id001
+            is_owner: false
+            is_primitive: true
+            name: EQUAL_SIGN
+            next_tokens: []
+            pattern: '='
+            personality: null
+            specification: {}
+            value: null
+          MISMATCH: !!python/object:__main__.Token
+            contexts: []
+            extract: *id001
+            is_owner: false
+            is_primitive: true
+            name: MISMATCH
+            next_tokens: []
+            pattern: .
+            personality: null
+            specification: {}
+            value: null
+          NEWLINE: !!python/object:__main__.Token
+            contexts: []
+            extract: *id001
+            is_owner: false
+            is_primitive: true
+            name: NEWLINE
+            next_tokens: []
+            pattern: \n
+            personality: null
+            specification: {}
+            value: null
+          OPEN_BRACKET: *id006
+          OPEN_KEY: !!python/object:__main__.Token
+            contexts: []
+            extract: *id001
+            is_owner: false
+            is_primitive: true
+            name: OPEN_KEY
+            next_tokens: []
+            pattern: \{
+            personality: null
+            specification: {}
+            value: null
+          REQUIRE_LITERAL: !!python/object:__main__.Token
+            contexts: []
+            extract: *id001
+            is_owner: false
+            is_primitive: true
+            name: REQUIRE_LITERAL
+            next_tokens: []
+            pattern: require
+            personality: null
+            specification: {}
+            value: null
+          SKIP: !!python/object:__main__.Token
+            contexts: []
+            extract: *id001
+            is_owner: false
+            is_primitive: true
+            name: SKIP
+            next_tokens: []
+            pattern: '[ \t]+'
+            personality: null
+            specification: {}
+            value: null
+          SLASH: *id003
+          STRING: !!python/object:__main__.Token
+            contexts: []
+            extract: *id001
+            is_owner: false
+            is_primitive: true
+            name: STRING
+            next_tokens: []
+            pattern: '"(?:\\.|[^"\\])*"'
+            personality: null
+            specification: {}
+            value: null
+        variables: {}
+      extract: !!python/name:__main__.%3Clambda%3E ''
+      is_owner: false
+      is_primitive: false
+      name: ATTRIBUTE
+      next_tokens: []
+      pattern: '&A_IDENTIFIER (&EQUAL_SIGN|&COLON) &B_IDENTIFIER'
+      personality: null
+      specification: {}
+      value: null
+    ATTRIBUTES: !!python/object:__main__.Token
+      contexts:
+      - *id007
+      extract: !!python/name:__main__.%3Clambda%3E ''
+      is_owner: false
+      is_primitive: false
+      name: ATTRIBUTES
+      next_tokens: []
+      pattern: (&ATTRIBUTE)*
+      personality: null
+      specification: {}
+      value: null
+    B_IDENTIFIER: !!python/object:__main__.Token
+      contexts:
+      - *id007
+      extract: !!python/name:__main__.%3Clambda%3E ''
+      is_owner: false
+      is_primitive: false
+      name: B_IDENTIFIER
+      next_tokens: []
+      pattern: '&LIST|&OBJECT|&A_IDENTIFIER'
+      personality: null
+      specification: {}
+      value: null
+    CLOSE_TAG: !!python/object:__main__.Token
+      contexts:
+      - *id007
+      extract: !!python/name:__main__.%3Clambda%3E ''
+      is_owner: false
+      is_primitive: false
+      name: CLOSE_TAG
+      next_tokens: []
+      pattern: '&OPEN_BRACKET &SLASH &B_IDENTIFIER &CLOSE_BRACKET'
+      personality: null
+      specification: {}
+      value: null
+    EOF: !!python/object:__main__.Token
+      contexts:
+      - *id007
+      extract: !!python/name:__main__.%3Clambda%3E ''
+      is_owner: false
+      is_primitive: false
+      name: EOF
+      next_tokens: []
+      pattern: ''
+      personality: null
+      specification: {}
+      value: null
+    LIST: !!python/object:__main__.Token
+      contexts:
+      - *id007
+      extract: !!python/name:__main__.%3Clambda%3E ''
+      is_owner: false
+      is_primitive: false
+      name: LIST
+      next_tokens: []
+      pattern: '&OPEN_BRACKET &B_IDENTIFIER (&COMMA &B_IDENTIFIER)*? &CLOSE_BRACKET'
+      personality: null
+      specification: {}
+      value: null
+    OBJECT: !!python/object:__main__.Token
+      contexts:
+      - *id007
+      extract: !!python/name:__main__.%3Clambda%3E ''
+      is_owner: false
+      is_primitive: false
+      name: OBJECT
+      next_tokens: []
+      pattern: '&OPEN_KEY (&A_IDENTIFIER &COLON &B_IDENTIFIER)*? &CLOSE_KEY'
+      personality: null
+      specification: {}
+      value: null
+    OPEN_TAG: !!python/object:__main__.Token
+      contexts:
+      - *id007
+      extract: !!python/name:__main__.%3Clambda%3E ''
+      is_owner: false
+      is_primitive: false
+      name: OPEN_TAG
+      next_tokens: []
+      pattern: '&OPEN_BRACKET &A_IDENTIFIER &ATTRIBUTES? &CLOSE_BRACKET'
+      personality: null
+      specification: {}
+      value: null
+    PROGRAM: !!python/object:__main__.Token
+      contexts:
+      - *id007
+      extract: !!python/name:__main__.%3Clambda%3E ''
+      is_owner: false
+      is_primitive: false
+      name: PROGRAM
+      next_tokens: []
+      pattern: (&XML_STATEMENT|&REQUIRE_STATEMENT)*
+      personality: null
+      specification: {}
+      value: null
+    REQUIRE_STATEMENT: !!python/object:__main__.Token
+      contexts:
+      - *id007
+      extract: !!python/name:__main__.%3Clambda%3E ''
+      is_owner: false
+      is_primitive: false
+      name: REQUIRE_STATEMENT
+      next_tokens: []
+      pattern: '&REQUIRE_LITERAL &A_IDENTIFIER'
+      personality: null
+      specification: {}
+      value: null
+    ROOT: !!python/object:__main__.Token
+      contexts:
+      - *id007
+      extract: !!python/name:__main__.%3Clambda%3E ''
+      is_owner: false
+      is_primitive: false
+      name: ROOT
+      next_tokens: []
+      pattern: '&PROGRAM &EOF'
+      personality: &id008 !!python/object/apply:__main__.Personality
+      - 1
+      specification: {}
+      value: null
+    TEST1: !!python/object:__main__.Token
+      contexts:
+      - *id007
+      extract: !!python/name:__main__.%3Clambda%3E ''
+      is_owner: false
+      is_primitive: false
+      name: TEST1
+      next_tokens: []
+      pattern: '&OPEN_BRACKET &SLASH &CLOSE_BRACKET'
+      personality: *id008
+      specification: {}
+      value: null
+    TEST2: !!python/object:__main__.Token
+      contexts:
+      - *id007
+      extract: !!python/name:__main__.%3Clambda%3E ''
+      is_owner: false
+      is_primitive: false
+      name: TEST2
+      next_tokens: []
+      pattern: (&OPEN_BRACKET &SLASH &CLOSE_BRACKET)*
+      personality: *id008
+      specification: {}
+      value: null
+    XML_STATEMENT: !!python/object:__main__.Token
+      contexts:
+      - *id007
+      extract: !!python/name:__main__.%3Clambda%3E ''
+      is_owner: false
+      is_primitive: false
+      name: XML_STATEMENT
+      next_tokens: []
+      pattern: '&OPEN_TAG &PROGRAM &CLOSE_TAG'
+      personality: null
+      specification: {}
+      value: null
+  variables: {}
+visitor: null

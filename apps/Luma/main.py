@@ -1,3 +1,4 @@
+from abc import ABC, abstractmethod
 import re
 from collections import defaultdict
 from dataclasses import dataclass, field
@@ -85,6 +86,165 @@ class Token:
     value: Optional[Dict[str, Union[int, str]]] = None
 
 
+
+
+class Grammar(ABC):
+   
+    def __init__(self):
+        self.hydrated_token = None
+        self.parser_context = None
+        self.visitor = None
+
+    @abstractmethod
+    def build_grammar(self, visitor):
+        raise NotImplementedError("")
+
+    def compile_tokens(self, init):
+        actual_token = self.parser_context.get_token(init)
+        if not actual_token:
+            raise ValueError(f"Token {init} não encontrado no contexto do parser.")
+        tokens_patterns = actual_token.pattern.split(" ")
+        tokens_list = []
+        for pattern in tokens_patterns:
+            cleaned_pattern = re.sub(r"[^a-zA-Z0-9_]", "", pattern)
+            token, ctx = get_value(cleaned_pattern, actual_token.contexts)
+            token.specification = analyze_pattern(pattern)
+            tokens_list.append(token)
+
+        # Linkando os tokens
+        for tk1, tk2 in zip(tokens_list, tokens_list[1:]):
+            tk1.next_tokens.append(tk2)
+        self.hydrated_token = tokens_list
+
+
+class ObjectGrammar(Grammar):
+
+    def build_grammar(self, visitor) -> 'ParserContext':
+        parser_context = ParserContext(name='parser')
+        token_context = ParserContext(name='token', parent=parser_context)
+
+        TOKEN_SPECIFICATION = [
+            ('OPEN_BRACKET', {'pattern': r'<', 'is_primitive': True, 'extract': regex_finder}),
+            ('CLOSE_BRACKET', {'pattern': r'>', 'is_primitive': True, 'extract': regex_finder}),
+            ('SLASH', {'pattern': r'/', 'is_primitive': True, 'extract': regex_finder}),
+            ('EQUAL_SIGN', {'pattern': r'=', 'is_primitive': True, 'extract': regex_finder}),
+            ('COLON', {'pattern': r':', 'is_primitive': True, 'extract': regex_finder}),
+            ('OPEN_KEY', {'pattern': r'\{', 'is_primitive': True, 'extract': regex_finder}),
+            ('CLOSE_KEY', {'pattern': r'\}', 'is_primitive': True, 'extract': regex_finder}),
+            ('COMMA', {'pattern': r',', 'is_primitive': True, 'extract': regex_finder}),
+            ('REQUIRE_LITERAL', {'pattern': r'require', 'is_primitive': True, 'extract': regex_finder}),
+            ('STRING', {'pattern': r'"(?:\\.|[^"\\])*"', 'is_primitive': True, 'extract': regex_finder}),
+            ('A_IDENTIFIER', {'pattern': r'[a-zA-Z_][a-zA-Z0-9_\.]*', 'is_primitive': True, 'extract': regex_finder}),
+            ('NEWLINE', {'pattern': r'\n', 'is_primitive': True, 'extract': regex_finder}),
+            ('SKIP', {'pattern': r'[ \t]+', 'is_primitive': True, 'extract': regex_finder}),
+            ('MISMATCH', {'pattern': r'.', 'is_primitive': True, 'extract': regex_finder}),
+        ]
+
+        for name, info in TOKEN_SPECIFICATION:
+            token_context.set_token(name, info)
+
+        # Definindo tokens complexos
+        complex_tokens = {
+            "B_IDENTIFIER": {
+                "pattern": "&LIST|&OBJECT|&A_IDENTIFIER",
+                "contexts": [token_context],
+                "scan": pattern_finder,
+                "is_owner": False
+            },
+            "LIST": {
+                "pattern": "&OPEN_BRACKET &B_IDENTIFIER (&COMMA &B_IDENTIFIER)*? &CLOSE_BRACKET",
+                "contexts": [token_context],
+                "scan": pattern_finder,
+                "is_owner": False,
+                "visitor": visitor.visit_list,
+            },
+            "OBJECT": {
+                "pattern": "&OPEN_KEY (&A_IDENTIFIER &COLON &B_IDENTIFIER)*? &CLOSE_KEY",
+                "contexts": [token_context],
+                "scan": pattern_finder,
+                "is_owner": False,
+                "visitor": visitor.visit_object,
+            },
+            "ATTRIBUTE": {
+                "pattern": "&A_IDENTIFIER (&EQUAL_SIGN|&COLON) &B_IDENTIFIER",
+                "contexts": [token_context],
+                "scan": pattern_finder,
+                "is_owner": False
+            },
+            "ATTRIBUTES": {
+                "pattern": "(&ATTRIBUTE)*",
+                "contexts": [token_context],
+                "scan": pattern_finder,
+                "is_owner": False
+            },
+            "EOF": {
+                "scan": eof_finder,
+                "is_owner": False,
+                "contexts": [token_context]
+            },
+            "OPEN_TAG": {
+                "pattern": "&OPEN_BRACKET &A_IDENTIFIER &ATTRIBUTES? &CLOSE_BRACKET",
+                "contexts": [token_context],
+                "scan": pattern_finder,
+                "is_owner": False
+            },
+            "PROGRAM": {
+                "pattern": "(&XML_STATEMENT|&REQUIRE_STATEMENT)*",
+                "contexts": [token_context],
+                "scan": pattern_finder,
+                "is_owner": False
+            },
+            "CLOSE_TAG": {
+                "pattern": "&OPEN_BRACKET &SLASH &B_IDENTIFIER &CLOSE_BRACKET",
+                "contexts": [token_context],
+                "scan": pattern_finder,
+                "is_owner": False
+            },
+            "XML_STATEMENT": {
+                "pattern": "&OPEN_TAG &PROGRAM &CLOSE_TAG",
+                "contexts": [token_context],
+                "scan": pattern_finder,
+                "is_owner": False
+            },
+            "REQUIRE_STATEMENT": {
+                "pattern": "&REQUIRE_LITERAL &A_IDENTIFIER",
+                "contexts": [token_context],
+                "scan": pattern_finder,
+                "is_owner": False
+            },
+            "ROOT": {
+                "pattern": "&PROGRAM &EOF",
+                "contexts": [token_context],
+                "scan": pattern_finder,
+                "is_owner": False,
+                "personality": Personality.LAZY
+            },
+            "TEST1": {
+                "pattern": "&OPEN_BRACKET &SLASH &CLOSE_BRACKET",
+                "contexts": [token_context],
+                "scan": pattern_finder,
+                "is_owner": False,
+                "personality": Personality.LAZY
+            },
+            "TEST2": {
+                "pattern": "(&OPEN_BRACKET &SLASH &CLOSE_BRACKET)*",
+                "contexts": [token_context],
+                "scan": pattern_finder,
+                "is_owner": False,
+                "personality": Personality.LAZY
+            },
+        }
+
+        for name, info in complex_tokens.items():
+            parser_context.set_token(name, info)
+
+        self.parser_context = parser_context
+
+
+    def iter_tokens_light(self,):
+        return iter(self.hydrated_token)
+
+
 # Definição do Contexto de Parsing
 class ParserContext:
     def __init__(self, name: str = 'root', parent: Optional['ParserContext'] = None):
@@ -156,119 +316,14 @@ def match_regex(token_pattern: str, text: str) -> Optional[str]:
     return match.group() if match else None
 
 
+class Visitor:
+    def visit_object(self,):
+        pass
+
+    def visit_list(self):
+        pass
+
 # Construção da Gramática
-def build_grammar() -> ParserContext:
-    parser_context = ParserContext(name='parser')
-    token_context = ParserContext(name='token', parent=parser_context)
-
-    TOKEN_SPECIFICATION = [
-        ('OPEN_BRACKET', {'pattern': r'<', 'is_primitive': True, 'extract': regex_finder}),
-        ('CLOSE_BRACKET', {'pattern': r'>', 'is_primitive': True, 'extract': regex_finder}),
-        ('SLASH', {'pattern': r'/', 'is_primitive': True, 'extract': regex_finder}),
-        ('EQUAL_SIGN', {'pattern': r'=', 'is_primitive': True, 'extract': regex_finder}),
-        ('COLON', {'pattern': r':', 'is_primitive': True, 'extract': regex_finder}),
-        ('OPEN_KEY', {'pattern': r'\{', 'is_primitive': True, 'extract': regex_finder}),
-        ('CLOSE_KEY', {'pattern': r'\}', 'is_primitive': True, 'extract': regex_finder}),
-        ('COMMA', {'pattern': r',', 'is_primitive': True, 'extract': regex_finder}),
-        ('REQUIRE_LITERAL', {'pattern': r'require', 'is_primitive': True, 'extract': regex_finder}),
-        ('STRING', {'pattern': r'"(?:\\.|[^"\\])*"', 'is_primitive': True, 'extract': regex_finder}),
-        ('A_IDENTIFIER', {'pattern': r'[a-zA-Z_][a-zA-Z0-9_\.]*', 'is_primitive': True, 'extract': regex_finder}),
-        ('NEWLINE', {'pattern': r'\n', 'is_primitive': True, 'extract': regex_finder}),
-        ('SKIP', {'pattern': r'[ \t]+', 'is_primitive': True, 'extract': regex_finder}),
-        ('MISMATCH', {'pattern': r'.', 'is_primitive': True, 'extract': regex_finder}),
-    ]
-
-    for name, info in TOKEN_SPECIFICATION:
-        token_context.set_token(name, info)
-
-    # Definindo tokens complexos
-    complex_tokens = {
-        "B_IDENTIFIER": {
-            "pattern": "&LIST|&OBJECT|&A_IDENTIFIER",
-            "contexts": [token_context],
-            "scan": pattern_finder,
-            "is_owner": False
-        },
-        "LIST": {
-            "pattern": "&OPEN_BRACKET &B_IDENTIFIER (&COMMA &B_IDENTIFIER)*? &CLOSE_BRACKET",
-            "contexts": [token_context],
-            "scan": pattern_finder,
-            "is_owner": False
-        },
-        "OBJECT": {
-            "pattern": "&OPEN_KEY (&A_IDENTIFIER &COLON &B_IDENTIFIER)*? &CLOSE_KEY",
-            "contexts": [token_context],
-            "scan": pattern_finder,
-            "is_owner": False
-        },
-        "ATTRIBUTE": {
-            "pattern": "&A_IDENTIFIER (&EQUAL_SIGN|&COLON) &B_IDENTIFIER",
-            "contexts": [token_context],
-            "scan": pattern_finder,
-            "is_owner": False
-        },
-        "ATTRIBUTES": {
-            "pattern": "(&ATTRIBUTE)*",
-            "contexts": [token_context],
-            "scan": pattern_finder,
-            "is_owner": False
-        },
-        "EOF": {
-            "scan": eof_finder,
-            "is_owner": False,
-            "contexts": [token_context]
-        },
-        "OPEN_TAG": {
-            "pattern": "&OPEN_BRACKET &A_IDENTIFIER &ATTRIBUTES? &CLOSE_BRACKET",
-            "contexts": [token_context],
-            "scan": pattern_finder,
-            "is_owner": False
-        },
-        "PROGRAM": {
-            "pattern": "(&XML_STATEMENT|&REQUIRE_STATEMENT)*",
-            "contexts": [token_context],
-            "scan": pattern_finder,
-            "is_owner": False
-        },
-        "CLOSE_TAG": {
-            "pattern": "&OPEN_BRACKET &SLASH &B_IDENTIFIER &CLOSE_BRACKET",
-            "contexts": [token_context],
-            "scan": pattern_finder,
-            "is_owner": False
-        },
-        "XML_STATEMENT": {
-            "pattern": "&OPEN_TAG &PROGRAM &CLOSE_TAG",
-            "contexts": [token_context],
-            "scan": pattern_finder,
-            "is_owner": False
-        },
-        "REQUIRE_STATEMENT": {
-            "pattern": "&REQUIRE_LITERAL &A_IDENTIFIER",
-            "contexts": [token_context],
-            "scan": pattern_finder,
-            "is_owner": False
-        },
-        "ROOT": {
-            "pattern": "&PROGRAM &EOF",
-            "contexts": [token_context],
-            "scan": pattern_finder,
-            "is_owner": False,
-            "personality": Personality.LAZY
-        },
-        "TEST1": {
-            "pattern": "&OPEN_BRACKET &SLASH &CLOSE_BRACKET",
-            "contexts": [token_context],
-            "scan": pattern_finder,
-            "is_owner": False,
-            "personality": Personality.LAZY
-        },
-    }
-
-    for name, info in complex_tokens.items():
-        parser_context.set_token(name, info)
-
-    return parser_context
-
 
 # Função para Obter Token
 def get_value(value: str, contexts: List[ParserContext]) -> Tuple[Token, Optional[ParserContext]]:
@@ -280,54 +335,16 @@ def get_value(value: str, contexts: List[ParserContext]) -> Tuple[Token, Optiona
 
 
 # Função Principal de Parsing
-def parse_code(parser_context: ParserContext, code: str):
-    actual_token = parser_context.get_token("TEST1")
-    if not actual_token:
-        raise ValueError("Token 'TEST1' não encontrado no contexto do parser.")
+def parse_code(grammar: Grammar, code: str, init: str):
 
-    tokens_patterns = actual_token.pattern.split(" ")
 
-    tokens_list = []
-    for pattern in tokens_patterns:
-        cleaned_pattern = re.sub(r"[^a-zA-Z0-9_]", "", pattern)
-        token, ctx = get_value(cleaned_pattern, actual_token.contexts)
-        token.specification = analyze_pattern(pattern)
-        tokens_list.append(token)
+    grammar.build_grammar(visitor=Visitor())
+    grammar.compile_tokens(init)
 
-    # Linkando os tokens
-    for tk1, tk2 in zip(tokens_list, tokens_list[1:]):
-        tk1.next_tokens.append(tk2)
 
-    # Parsing do Código
-    pos = 0
-    batch_size = 1  # Pode ser ajustado conforme necessário
-    interval_start, interval_end = 0, batch_size
-    current_pos = 0
+    for val in grammar.iter_tokens_light():
+        print(val)
 
-    while current_pos < len(tokens_list):
-        if interval_end > len(code):
-            break
-
-        current_text = code[interval_start:interval_end]
-        current_token = tokens_list[current_pos]
-
-        if not current_token.is_primitive:
-            raise NotImplementedError("Parsing de tokens não primitivos não implementado.")
-
-        matches = current_token.extract(current_token.__dict__, current_text)
-        if len(matches) != 1:
-            raise NotImplementedError("Multiples matches ou nenhum match encontrado.")
-
-        match = matches[0]
-        current_token.value = {
-            'start': interval_start + match[0],
-            'end': interval_start + match[1],
-            'val': match[2],
-        }
-
-        interval_start = interval_end
-        interval_end += batch_size
-        current_pos += 1
 
 
 def analyze_pattern(pattern: str) -> Dict[str, Any]:
@@ -357,14 +374,11 @@ def analyze_pattern(pattern: str) -> Dict[str, Any]:
 # Exemplo de Uso
 if __name__ == "__main__":
     # Construir a gramática
-    parser_ctx = build_grammar()
+    parser_ctx = ObjectGrammar()
 
-    # Código de exemplo para analisar
-    example_code = "</>"
-
-    # Executar o parsing
     try:
-        parse_code(parser_ctx, example_code)
+        parse_code(parser_ctx, "</>", "TEST1")
+
         print("Parsing concluído com sucesso.")
         export_dict_to_yaml_file(convert_to_dict(parser_ctx), "out.yaml")
     except NotImplementedError as nie:
