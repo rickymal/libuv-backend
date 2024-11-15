@@ -124,8 +124,10 @@ class ParserContext:
 if __name__ == "__main__":
 
     ctx = build_grammar(None)
-    tk_l = build_superficialize(ctx, "&TEST2")
+    # tk_l = build_superficialize(ctx, "&TEST2")tk =
+    tk_left = compile_token(extract_token_from_context("&TEST2", ctx))
 
-    for val in iter_tk(tk_l):
+    for val in iter_tk(tk_left):
+        print(val.name)
         pass
 
