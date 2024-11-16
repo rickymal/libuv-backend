@@ -17,14 +17,26 @@ def analyze_pattern(antlr_code: str, matcher) -> tuple[dict[str, bool | Propagat
     # Extraindo partes
     # operator = None
     pattern, operator = match.groups()
+    spl_pattern = []
 
     # Determinando se é um grupo
     is_group = pattern.startswith("(") and pattern.endswith(")")
+    is_or = False
     is_identifier = pattern.startswith("&")
     if is_group:
         pattern = pattern[1:-1]  # Remove os parênteses
+        g_pattern = pattern.split("|")
+        is_or = len(g_pattern) > 1
+        if is_or:
+            spl_pattern = list(enumerate(pattern.split("|")))
+        else:
+            spl_pattern = list([0, idx] for idx in pattern.split(" "))
     elif is_identifier:
         pattern = pattern[1:]  # Remove o `&`
+        spl_pattern = [[0, pattern]]
+
+
+
 
     # Determinando a propagação
     if operator == "*":
@@ -41,7 +53,8 @@ def analyze_pattern(antlr_code: str, matcher) -> tuple[dict[str, bool | Propagat
         'is_identifier': is_identifier,
         'is_group': is_group,
         'propagation': propagation,
-    }, pattern.split(" ")
+        'is_or' : is_or,
+    }, spl_pattern
 
 if __name__ == "__main__":
     test_cases = [

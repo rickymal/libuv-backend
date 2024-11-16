@@ -1,4 +1,5 @@
 import re
+from collections import defaultdict
 from collections.abc import Iterable
 from token_tk_base import TokenTK
 from typing import List, Tuple, Dict, Any, Optional, Union
@@ -54,20 +55,20 @@ def build_grammar(visitor) -> 'ParserContext':
     token_context = ParserContext(name='token', parent=parser_context)
 
     TOKEN_SPECIFICATION = [
-        ('&OPEN_BRACKET', {'pattern': r'<', 'is_primitive': True, 'extract': regex_finder}),
-        ('&CLOSE_BRACKET', {'pattern': r'>', 'is_primitive': True, 'extract': regex_finder}),
-        ('&SLASH', {'pattern': r'/', 'is_primitive': True, 'extract': regex_finder}),
-        ('&EQUAL_SIGN', {'pattern': r'=', 'is_primitive': True, 'extract': regex_finder}),
-        ('&COLON', {'pattern': r':', 'is_primitive': True, 'extract': regex_finder}),
-        ('&OPEN_KEY', {'pattern': r'\{', 'is_primitive': True, 'extract': regex_finder}),
-        ('&CLOSE_KEY', {'pattern': r'\}', 'is_primitive': True, 'extract': regex_finder}),
-        ('&COMMA', {'pattern': r',', 'is_primitive': True, 'extract': regex_finder}),
-        ('&REQUIRE_LITERAL', {'pattern': r'require', 'is_primitive': True, 'extract': regex_finder}),
-        ('&STRING', {'pattern': r'"(?:\\.|[^"\\])*"', 'is_primitive': True, 'extract': regex_finder}),
-        ('&A_IDENTIFIER', {'pattern': r'[a-zA-Z_][a-zA-Z0-9_\.]*', 'is_primitive': True, 'extract': regex_finder}),
-        ('&NEWLINE', {'pattern': r'\n', 'is_primitive': True, 'extract': regex_finder}),
-        ('&SKIP', {'pattern': r'[ \t]+', 'is_primitive': True, 'extract': regex_finder}),
-        ('&MISMATCH', {'pattern': r'.', 'is_primitive': True, 'extract': regex_finder}),
+        ('&OPEN_BRACKET', {'pattern': r'<', 'is_primitive': True, 'scan': regex_finder}),
+        ('&CLOSE_BRACKET', {'pattern': r'>', 'is_primitive': True, 'scan': regex_finder}),
+        ('&SLASH', {'pattern': r'/', 'is_primitive': True, 'scan': regex_finder}),
+        ('&EQUAL_SIGN', {'pattern': r'=', 'is_primitive': True, 'scan': regex_finder}),
+        ('&COLON', {'pattern': r':', 'is_primitive': True, 'scan': regex_finder}),
+        ('&OPEN_KEY', {'pattern': r'\{', 'is_primitive': True, 'scan': regex_finder}),
+        ('&CLOSE_KEY', {'pattern': r'\}', 'is_primitive': True, 'scan': regex_finder}),
+        ('&COMMA', {'pattern': r',', 'is_primitive': True, 'scan': regex_finder}),
+        ('&REQUIRE_LITERAL', {'pattern': r'require', 'is_primitive': True, 'scan': regex_finder}),
+        ('&STRING', {'pattern': r'"(?:\\.|[^"\\])*"', 'is_primitive': True, 'scan': regex_finder}),
+        ('&A_IDENTIFIER', {'pattern': r'[a-zA-Z_][a-zA-Z0-9_\.]*', 'is_primitive': True, 'scan': regex_finder}),
+        ('&NEWLINE', {'pattern': r'\n', 'is_primitive': True, 'scan': regex_finder}),
+        ('&SKIP', {'pattern': r'[ \t]+', 'is_primitive': True, 'scan': regex_finder}),
+        ('&MISMATCH', {'pattern': r'.', 'is_primitive': True, 'scan': regex_finder}),
     ]
 
     for name, info in TOKEN_SPECIFICATION:
@@ -168,6 +169,13 @@ def build_grammar(visitor) -> 'ParserContext':
             "is_owner": False,
             "personality": Personality.LAZY
         },
+        "&TEST4": {
+            "pattern": "(&OPEN_BRACKET (&OPEN_BRACKET|&SLASH?|&CLOSE_BRACKET)? &CLOSE_BRACKET*)",
+            "contexts": [token_context],
+            "scan": pattern_finder,
+            "is_owner": False,
+            "personality": Personality.LAZY
+        },
     }
 
     for name, info in complex_tokens.items():
@@ -204,38 +212,43 @@ def get_view(token: TokenTK) -> tuple[bool, bool]:
 
     return is_zero, is_many
 
-def chain_token(tokens: list[TokenTK]):
+def chain_token(tokens: list[int, TokenTK]):
 
     for tk1, tk2 in zip(tokens[0:], tokens[1:]):
+
         _, is_many = get_view(tk1)
-        tk1.next_tokens.append(tk2)  # um token sempre apontará para o próximo
+        tk1.ntokens.append(tk2)  # um token sempre apontará para o próximo
         if is_many:
-            tk1.next_tokens.append(tk1)  # aponta para ele mesmo
+            tk1.ntokens.append(tk1)  # aponta para ele mesmo
 
     reversed_tk = tokens[::-1]
 
     for tk1, tk2 in zip(reversed_tk[0:], reversed_tk[1:]):
         is_zero, _ = get_view(tk1)
         if is_zero:
-            tk2.next_tokens.append(*tk1.next_tokens)
+            tk2.ntokens.append(*tk1.ntokens)
 
 
-def compile_token(actual_token) -> list[TokenTK]:
+def compile_token(actual_token) -> dict[int, list[TokenTK]]:
     # 3. Realiza a hidração dos dados em si
     actual_token.specification, c_pattern_seq_list = analyze_pattern(actual_token.pattern, matcher=r"(\(.*\)|&?\w+)(\*\?|\*|\?|\?\*)?$")
-    lof_tk = []
-    for str_patter in c_pattern_seq_list:
+    lof_tk = defaultdict(list)
+
+    for rel_pos, str_patter in c_pattern_seq_list:
         tk, _ = get_value(str_patter, actual_token.contexts)
         tk.parents.append(actual_token)
         actual_token.children.append(tk)
         if tk.is_primitive:
             tk.specification, _ = analyze_pattern(str_patter, matcher=r"(&?\w+)(\*\?|\*|\?|\?\*)?$")
-            lof_tk.append(tk)
+
+            lof_tk[rel_pos].append(tk)
         else:
             tk_l = compile_token(tk)
-            lof_tk.append(tk_l[0])
+            lof_tk[rel_pos].append(tk_l[0])
 
-    chain_token(lof_tk)
+    for _, val in lof_tk.items():
+        chain_token(val)
+
     return lof_tk
 
 def build_superficialize(ctx: ParserContext, token_str: str):

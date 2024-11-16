@@ -9,6 +9,7 @@ class TokenTK:
     name: str
     pattern: str
     is_primitive: bool
+    scan: any
     # extract: Callable[[Dict[str, Any], str], List[Tuple[int, int, str]]]
     contexts: List['ParserContext'] = field(default_factory=list)
     is_owner: bool = False
@@ -17,4 +18,4 @@ class TokenTK:
     children: List['TokenTK'] = field(default_factory=list)
     specification: Dict[str, Any] = field(default_factory=dict)
     value: Optional[Dict[str, Union[int, str]]] = None
-    next_tokens: list['TokenTK'] = field(default_factory=list)
+    ntokens: list['TokenTK'] = field(default_factory=list)
