@@ -1,9 +1,12 @@
 import re
-from typing import List, Tuple, Dict, Any, Optional
+from collections.abc import Iterable
+from token_tk_base import TokenTK
+from typing import List, Tuple, Dict, Any, Optional, Union
+
 
 from analyzier import analyze_pattern
 from enums import PropagationType, Personality
-from main import ParserContext, Token, get_value, regex_finder, pattern_finder, eof_finder
+from main import ParserContext, get_value, regex_finder, pattern_finder, eof_finder
 
 
 def literal_finder(pattern: str, text: str) -> List[Tuple[int, int, str]]:
@@ -158,6 +161,13 @@ def build_grammar(visitor) -> 'ParserContext':
             "is_owner": False,
             "personality": Personality.LAZY
         },
+        "&TEST3": {
+            "pattern": "(&OPEN_BRACKET &SLASH? &CLOSE_BRACKET)",
+            "contexts": [token_context],
+            "scan": pattern_finder,
+            "is_owner": False,
+            "personality": Personality.LAZY
+        },
     }
 
     for name, info in complex_tokens.items():
@@ -166,7 +176,8 @@ def build_grammar(visitor) -> 'ParserContext':
     return parser_context
 
 
-def iter_tk(token_start: Token):
+
+def iter_tk(token_start: TokenTK):
     tk_manager = token_start.parents[0]
     tk_sequence = tk_manager.children
 
@@ -175,7 +186,11 @@ def iter_tk(token_start: Token):
 
     if tk_manager.specification['propagation'] == PropagationType.ONLY_ONE and tk_manager.specification['is_group']:
         for tk in tk_sequence:
-            yield tk
+            if tk.specification['propagation'] == PropagationType.ONLY_ONE:
+                yield tk
+
+            if tk.specification['propagation'] == PropagationType.ONE_TO_MANY:
+                pass
 
     if tk_manager.specification['propagation'] == PropagationType.ONE_TO_MANY and tk_manager.specification['is_group']:
         while True:
@@ -183,22 +198,45 @@ def iter_tk(token_start: Token):
                 yield tk
 
 
-def compile_token(actual_token):
-    # 3. Realiza a hidração dos dados em si
-    actual_token.specification, c_pattern_seq_list = analyze_pattern(actual_token.pattern)
+def get_view(token: TokenTK) -> tuple[bool, bool]:
+    is_zero = token.specification['propagation'] in {PropagationType.ZERO_TO_ONE, PropagationType.ZERO_TO_MANY}
+    is_many = token.specification['propagation'] in {PropagationType.ONE_TO_MANY, PropagationType.ZERO_TO_MANY}
 
+    return is_zero, is_many
+
+def chain_token(tokens: list[TokenTK]):
+
+    for tk1, tk2 in zip(tokens[0:], tokens[1:]):
+        _, is_many = get_view(tk1)
+        tk1.next_tokens.append(tk2)  # um token sempre apontará para o próximo
+        if is_many:
+            tk1.next_tokens.append(tk1)  # aponta para ele mesmo
+
+    reversed_tk = tokens[::-1]
+
+    for tk1, tk2 in zip(reversed_tk[0:], reversed_tk[1:]):
+        is_zero, _ = get_view(tk1)
+        if is_zero:
+            tk2.next_tokens.append(*tk1.next_tokens)
+
+
+def compile_token(actual_token) -> list[TokenTK]:
+    # 3. Realiza a hidração dos dados em si
+    actual_token.specification, c_pattern_seq_list = analyze_pattern(actual_token.pattern, matcher=r"(\(.*\)|&?\w+)(\*\?|\*|\?|\?\*)?$")
     lof_tk = []
     for str_patter in c_pattern_seq_list:
-        tk, ctx = get_value(str_patter, actual_token.contexts)
+        tk, _ = get_value(str_patter, actual_token.contexts)
         tk.parents.append(actual_token)
         actual_token.children.append(tk)
-        lof_tk.append(tk)
+        if tk.is_primitive:
+            tk.specification, _ = analyze_pattern(str_patter, matcher=r"(&?\w+)(\*\?|\*|\?|\?\*)?$")
+            lof_tk.append(tk)
+        else:
+            tk_l = compile_token(tk)
+            lof_tk.append(tk_l[0])
 
-        # Aqui ocorre a recursão
-        if not tk.is_primitive:
-            raise NotImplementedError("")
-
-    return lof_tk[0]
+    chain_token(lof_tk)
+    return lof_tk
 
 def build_superficialize(ctx: ParserContext, token_str: str):
 

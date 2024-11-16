@@ -5,13 +5,17 @@ import enums
 from enums import PropagationType
 
 
-def analyze_pattern(antlr_code: str) -> tuple[dict[str, bool | PropagationType], str]:
+def analyze_pattern(antlr_code: str, matcher) -> tuple[dict[str, bool | PropagationType], str]:
     # Regex para dividir padrão e operadores, incluindo operadores compostos como *?
-    match = re.match(r"(\(.*\)|&?\w+)(\*\?|[\*\?])?$", antlr_code)
+    #antlr_code = &SLASH?
+    #matcher = r"(.*|&?\w+)(\*\?|\*|\?|\?\*)?$"
+    match = re.match(matcher, antlr_code)
+
     if not match:
         raise ValueError("Formato inválido de padrão!")
 
     # Extraindo partes
+    # operator = None
     pattern, operator = match.groups()
 
     # Determinando se é um grupo

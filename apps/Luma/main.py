@@ -13,8 +13,17 @@ from enums import Personality, PropagationType
 from etc import *
 import re
 
-def get_value(value: str, contexts: List['ParserContext']) -> Tuple['Token', Optional['ParserContext']]:
+# Definição do Token
+from dataclasses import field, dataclass
+from typing import Callable, Dict, Any, List, Tuple, Optional, Union
+
+from enums import Personality
+from token_tk_base import TokenTK
+
+
+def get_value(value: str, contexts: List['ParserContext']) -> Tuple[TokenTK, Optional['ParserContext']]:
     for ctx in contexts:
+        value = value.replace('?',"")
         token = ctx.get_token(value)
         if token:
             return token, ctx
@@ -75,20 +84,6 @@ def export_dict_to_yaml_file(data: Dict[str, Any], file_path: str) -> None:
         print(f"Erro ao exportar para YAML: {e}")
 
 
-# Definição do Token
-@dataclass
-class Token:
-    name: str
-    pattern: str
-    is_primitive: bool
-    extract: Callable[[Dict[str, Any], str], List[Tuple[int, int, str]]]
-    contexts: List['ParserContext'] = field(default_factory=list)
-    is_owner: bool = False
-    personality: Optional[Personality] = None
-    parents: List['Token'] = field(default_factory=list)
-    children: List['Token'] = field(default_factory=list)
-    specification: Dict[str, Any] = field(default_factory=dict)
-    value: Optional[Dict[str, Union[int, str]]] = None
 
 
 # Definição do Contexto de Parsing
@@ -100,18 +95,17 @@ class ParserContext:
         self.tokens: Dict[str, Token] = {}
 
     def set_token(self, name: str, token_info: Dict[str, Any]):
-        token = Token(
+        token = TokenTK(
             name=name,
             pattern=token_info.get('pattern', ''),
             is_primitive=token_info.get('is_primitive', False),
-            extract=token_info.get('extract', lambda tk, txt: []),
             is_owner=token_info.get('is_owner', False),
             personality=token_info.get('personality', None),
             contexts=list(token_info.get('contexts', ())),
         )
         self.tokens[name] = token
 
-    def get_token(self, name: str) -> Optional[Token]:
+    def get_token(self, name: str) -> Optional[TokenTK]:
         return self.tokens.get(name) or (self.parent.get_token(name) if self.parent else None)
 
     def set_variable(self, key: str, value: Any):
@@ -120,14 +114,12 @@ class ParserContext:
     def get_variable(self, key: str) -> Any:
         return self.variables.get(key) or (self.parent.get_variable(key) if self.parent else None)
 
+
+
 # Exemplo de Uso
 if __name__ == "__main__":
 
     ctx = build_grammar(None)
     # tk_l = build_superficialize(ctx, "&TEST2")tk =
-    tk_left = compile_token(extract_token_from_context("&TEST2", ctx))
-
-    for val in iter_tk(tk_left):
-        print(val.name)
-        pass
+    tk_left: list[TokenTK] = compile_token(extract_token_from_context("&TEST3", ctx))
 
