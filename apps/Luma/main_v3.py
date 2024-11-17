@@ -1,9 +1,13 @@
+from abc import abstractmethod, ABC
 from collections.abc import Iterable
 from dataclasses import dataclass, field
 from collections import defaultdict
 from enum import Enum, auto
 import re
 from typing import Union
+
+from anyio.abc import value
+from click import option
 
 
 def regex_finder(text: str, pattern: str) -> list[tuple[int, int, str]]:
@@ -29,6 +33,7 @@ class TKP:
 
 open_bracket = TK(scan = lambda text: regex_finder(text, pattern="<"))
 slash = TK(scan = lambda text: regex_finder(text, pattern="/"))
+question = TK(scan = lambda text: regex_finder(text, pattern="?"))
 close_bracket = TK(scan = lambda text: regex_finder(text, pattern=">"))
 
 @dataclass
@@ -45,42 +50,93 @@ class Chain:
         self.next.append(ch)
 
 
-def and_selector(*tks: TKP | Chain) -> Chain:
-    lof: list[Chain] = [Chain(val) for val in tks]
 
-    direct = tuple(lof)
-    reverse = direct[::-1]
+class Selector(ABC):
+    def __init__(self, sequence: bool, optional: bool):
+        self.sequence = sequence
+        self.optional = optional
+        self.chn: list[Chain | Selector] = []
 
-    for ch1, ch2 in zip(direct[:-1], direct[1:]):
-        ch1.next.append(ch2)
-
-        if ch1.value.sequence:
-            ch1.next.append(ch1)
-
-    for ch1, ch2 in zip(reverse[:-1], reverse[1:]):
-        if ch1.value.optional:
-            ch2.next.append(*ch1.next)
+    @abstractmethod
+    def compile(self, input_ch: Chain, output: Chain):
+        pass
 
 
-    for idx, val in enumerate(lof):
-        val.pos = idx
+class AndSelector(Selector):
 
-    return lof[0]
+    def __init__(self, *tkp: TKP | Selector):
+        super().__init__(sequence = False, optional=False)
+
+        for val in tkp:
+            ch = val
+            if not isinstance(ch, Chain):
+                ch = Chain(value = ch)
+            else:
+                raise Exception("")
+
+            self.chn.append(ch)
 
 
-def or_selector(*tks: TKP, input_ch: Chain, output_ch: Chain):
-    lof: list[Chain] = [Chain(val) for val in tks]
-    for ch in lof:
-        input_ch.next.append(ch)
-        ch.next.append(output_ch)
+
+    def compile(self, input_ch: Chain, output_ch: Chain):
+        lof: list[Chain] = self.chn
+
+        direct = tuple(lof)
+        reverse = direct[::-1]
+
+        for ch1, ch2 in zip(direct[:-1], direct[1:]):
+            ch1.next.append(ch2)
+
+            if ch1.value.sequence:
+                ch1.next.append(ch1)
+
+        for ch1, ch2 in zip(reverse[:-1], reverse[1:]):
+            if ch1.value.optional:
+                ch2.next.append(*ch1.next)
+
+        input_ch.next.append(lof[0])
+        lof[-1].next.append(output_ch)
 
 
-v = and_selector(
-TKP(name = 'OPEN_BRACKET', tk = open_bracket, sequence=False, optional=False),
-    or_selector(TKP(name = 'SLASH', tk = slash, sequence=False, optional=False),),
-    TKP(name = 'CLOSE_BRACKET', tk = close_bracket, sequence=False, optional=False)
+
+        for chn1, chn2, chn3 in zip(self.chn[0:-2], self.chn[1:-1], self.chn[2:]):
+            if isinstance(chn2.value, Selector):
+                chn2.value.compile(chn1, chn3)
+            pass
+
+
+
+
+
+class OrSelector(Selector):
+    def __init__(self, *tkp: TKP | Chain):
+        super().__init__(sequence = False, optional=False)
+
+        for tk in tkp:
+            if not isinstance(tk, Chain):
+                ch = Chain(value = tk)
+                self.chn.append(ch)
+            else:
+                self.chn.append(tk)
+
+    def compile(self, input_ch: Chain, output_ch: Chain):
+        for tk in self.chn:
+            input_ch.next.append(tk)
+            tk.next.append(output_ch)
+
+
+
+input_ch = Chain()
+output_ch = Chain()
+
+and_s = AndSelector(
+    TKP(name = "AAA",tk=open_bracket, sequence=False, optional=False),
+    OrSelector(
+        TKP(name = "BBB", tk=slash, sequence=False, optional=False),
+        TKP(name = "CCC", tk=question, sequence=False, optional=False),
+    ),
+    TKP(name = "DDD", tk=close_bracket, sequence=False, optional=False),
 )
-from IPython import embed
-embed()
 
-primeiro = v.next[0]
+
+and_s.compile(input_ch, output_ch)
