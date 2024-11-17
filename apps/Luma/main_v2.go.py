@@ -1,7 +1,6 @@
 from abc import abstractmethod, ABC
+from collections import defaultdict
 from dataclasses import dataclass
-
-from main import ParserContext
 
 import re
 
@@ -16,10 +15,25 @@ def regex_finder(text: str, pattern: str) -> list[tuple[int, int, str]]:
 
 class ObjectSelector(ABC):
 
+    def __init__(self):
+        self.left: list[ObjectSelector] = []
+        self.right: list[ObjectSelector] = []
+
+
+    def look_forward(self, *other: 'ObjectSelector'):
+        self.right.append(*other)
+
+    def look_behind(self, *other: 'ObjectSelector'):
+        self.right.append(*other)
+
+    def get_forward(self):
+        return self.right
+
+
+
     @abstractmethod
     def get_value(self, pos: int):
         pass
-
 
     @abstractmethod
     def compile(self):
@@ -32,6 +46,8 @@ class ObjectSelector(ABC):
         self.left = left
         self.right = right
         self.dim = dim
+
+
 
 
 @dataclass
@@ -95,7 +111,12 @@ root_stmt.add_ctx(pt)
 
 class OneSelector(ObjectSelector):
 
+    def compile(self):
+        raise NotImplementedError("")
+        pass
+
     def __init__(self, token):
+        super().__init__()
         self.token = token
 
     def get_value(self, pos: int):
@@ -107,7 +128,11 @@ class OneSelector(ObjectSelector):
 
 class ZeroOrOneSelector(ObjectSelector):
 
+    def compile(self):
+        raise NotImplementedError("")
+
     def __init__(self, tk):
+        super().__init__()
         self.tk = tk
 
     def get_value(self, pos: int):
@@ -119,8 +144,12 @@ class ZeroOrOneSelector(ObjectSelector):
 
 class OneToManySelector(ObjectSelector):
 
+    def compile(self):
+        pass
+
     def __init__(self, tk: Token):
         self.tk = tk
+        super().__init__()
 
     def get_value(self, pos: int):
         if pos == 0:
@@ -128,10 +157,14 @@ class OneToManySelector(ObjectSelector):
         else:
             return self.tk
 
-class OptionSelector(ObjectSelector):
+class OrSelector(ObjectSelector):
+
+    def compile(self):
+        pass
 
     def __init__(self, *tks: ObjectSelector):
         self.tks = tks
+        super().__init__()
 
     def get_value(self, pos: int):
         if pos == 0:
@@ -140,10 +173,52 @@ class OptionSelector(ObjectSelector):
             raise NotImplementedError("")
 
 
-root_stmt.create_sequence(
+class EndOfSeqSelector(ObjectSelector):
+    def get_value(self, pos: int):
+        pass
+
+    def compile(self):
+        pass
+
+
+class AndSelector(ObjectSelector):
+
+    def get_value(self, pos: int):
+        pass
+
+    def __init__(self, *objectSelector: ObjectSelector):
+        self.obj_selector: list[ObjectSelector] = objectSelector
+        self.sequence = defaultdict(list)
+        super().__init__()
+
+    def compile(self, seq=None, actual_pos=0):
+        if seq is None:
+            seq = defaultdict(list)
+
+        # self.obj_selector.append(EndOfSeqSelector())
+        for tk1, tk2 in zip(self.obj_selector[:-1], self.obj_selector[1:]):
+            tk1.look_forward(tk2)
+
+            if isinstance(tk1, OneToManySelector):
+                tk1.look_forward(self)
+
+        obj_selector_reversed = self.obj_selector[::-1]
+
+        for tk1, tk2 in zip(obj_selector_reversed[:-1], obj_selector_reversed[1:]):
+            if isinstance(tk1, ZeroOrOneSelector):
+                tk2.look_forward(*tk1.get_forward())
+
+        for idx, seq in enumerate(self.obj_selector):
+            seq[idx] = seq
+            # seq.compile()
+        return seq
+
+
+
+root = AndSelector(
     OneSelector(open_bracket),
     ZeroOrOneSelector(
-        OptionSelector(
+        OrSelector(
             OneSelector(open_bracket),
             ZeroOrOneSelector(slash),
             OneSelector(close_bracket)
@@ -151,8 +226,4 @@ root_stmt.create_sequence(
     ),
 )
 
-tk_seq = ps.compile()
-
-tk_seq.get_next() # Obtem o token open_bracket
-tk_seq.get_next() # Obtem o token open_bracket etc...
-
+tk_seq = root.compile()
