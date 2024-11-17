@@ -11,7 +11,7 @@ def regex_finder(text: str, pattern: str) -> list[tuple[int, int, str]]:
     return matches
 
 open_bracket = dict(scan = lambda text: regex_finder(text, pattern="<"), right = [], sequence = False, optional = False)
-slash = dict(scan = lambda text: regex_finder(text, pattern="/"))
+slash = dict(scan = lambda text: regex_finder(text, pattern="/"), right = [], sequence = False, optional = False)
 close_bracket = dict(scan = lambda text: regex_finder(text, pattern=">"), right = [], sequence = False, optional = False)
 
 
@@ -57,7 +57,9 @@ def zero_or_one_selector(tk: dict[int, dict]):
 
     raise StopIteration("")
 
-for val in and_selector(open_bracket, close_bracket, visitor=None):
+
+
+for val in and_selector(open_bracket, slash, close_bracket, visitor=None):
     print(val)
     pass
 
