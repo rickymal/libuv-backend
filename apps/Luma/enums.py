@@ -1,5 +1,12 @@
 from enum import Enum, auto
 
+class Moment(Enum):
+    OO = auto()
+
+
+class Moment(Enum):
+    OPA = auto()
+
 
 class Personality(Enum):
     LAZY = auto()          # Delegar o proprietário para o novo token encontrado

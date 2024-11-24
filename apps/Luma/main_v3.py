@@ -5,10 +5,8 @@ from collections import defaultdict
 from enum import Enum, auto
 import re
 from typing import Union
-
 from anyio.abc import value
 from click import option
-
 
 def regex_finder(text: str, pattern: str) -> list[tuple[int, int, str]]:
     matches = []
@@ -29,7 +27,7 @@ class TKP:
     optional: bool
 
     def __repr__(self):
-        return f"TKP: {self.name}"
+        return f"TKP({self.name})"
 
 open_bracket = TK(scan = lambda text: regex_finder(text, pattern="<"))
 slash = TK(scan = lambda text: regex_finder(text, pattern="/"))
@@ -43,6 +41,8 @@ class Chain:
         self.next: list[Chain | TKP] = []
         self.pos = 0
 
+    def __repr__(self):
+        return f"Chain({self.value})"
 
     def set_next(self, tk: Union['Chain', TK]):
         ch = Chain()
@@ -76,7 +76,8 @@ class AndSelector(Selector):
 
             self.chn.append(ch)
 
-
+    def __repr__(self):
+        return "AndSelector"
 
     def compile(self, input_ch: Chain, output_ch: Chain):
         lof: list[Chain] = self.chn
@@ -101,9 +102,10 @@ class AndSelector(Selector):
 
         for chn1, chn2, chn3 in zip(self.chn[0:-2], self.chn[1:-1], self.chn[2:]):
             if isinstance(chn2.value, Selector):
+                chn2.next.remove()
+                self.chn.remove(chn2)
                 chn2.value.compile(chn1, chn3)
             pass
-
 
 
 
@@ -117,13 +119,14 @@ class OrSelector(Selector):
                 ch = Chain(value = tk)
                 self.chn.append(ch)
             else:
-                self.chn.append(tk)
+                raise Exception("")
 
     def compile(self, input_ch: Chain, output_ch: Chain):
         for tk in self.chn:
             input_ch.next.append(tk)
             tk.next.append(output_ch)
-
+    def __repr__(self):
+        return "OrSelector"
 
 
 input_ch = Chain()
@@ -140,3 +143,4 @@ and_s = AndSelector(
 
 
 and_s.compile(input_ch, output_ch)
+print(input_ch)
