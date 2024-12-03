@@ -25,14 +25,14 @@ class Priority:
 
 # Definição de tokens básicos
 a_identifier = lambda: rg.pattern('a_identifier', r'[a-zA-Z_][a-zA-Z0-9_]*(\.[a-zA-Z_][a-zA-Z0-9_]*)*')
-open_tag = rg.literal('open_tag', '<', Priority(precedence = 2)) # Determina que em classo de conflito, open_tag sempre terá prioridade
-slash = rg.literal('slash', '/')
-close_tag = rg.literal('close_tag', '>')
-equal = rg.literal('equal', '=')
-colon = rg.literal('colon', ':')
-comma = rg.literal('comma', ',')
-open_brace = rg.literal('open_brace', '{')
-close_brace = rg.literal('close_brace', '}')
+open_tag = rg.literal(''<', Priority(precedence = 2)) # Determina que em classo de conflito, open_tag sempre terá prioridade
+slash = rg.literal('/')
+close_tag = rg.literal('>')
+equal = rg.literal('=')
+colon = rg.literal(':')
+comma = rg.literal(',')
+open_brace = rg.literal('{')
+close_brace = rg.literal('}')
 open_bracket = rg.literal('open_bracket', '[')
 close_bracket = rg.literal('close_bracket', ']')
 

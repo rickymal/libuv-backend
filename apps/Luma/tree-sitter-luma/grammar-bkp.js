@@ -1,5 +1,4 @@
-/*
-* @file This is a luma tester
+ * @file This is a luma tester
  * @author Henrique Mauler <henriquemauler@gmail.com>
  * @license MIT
  */
@@ -93,8 +92,32 @@ module.exports = grammar({
     ),
 
     _math_content: $ => prec.right(repeat1(
-      $.math_statement,
+      choice(
+        $.math_expression_statement,
+        $.math_statement,
+        $.math_function_definition
+      )
     )),
+
+    math_expression_statement: $ => seq(
+      $.math_expression,
+      optional(';')
+    ),
+
+    math_expression: $ => seq(
+      $.identifier,
+         optional(
+            '(',
+           $.identifier,
+             repeat(
+                ',',
+               $.identifier,
+             ),
+           ')',
+         ),
+      '=',
+      $.math_term
+    ),
 
     cond_expression: $ => seq(
       $.identifier,
@@ -105,7 +128,7 @@ module.exports = grammar({
            '!=',
          ),
          $.identifier,
-    ),
+    )
 
     math_statement: $ => seq(
       $.identifier,

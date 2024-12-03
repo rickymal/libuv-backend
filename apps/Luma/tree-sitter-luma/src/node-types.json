@@ -1,20 +1,5 @@
 [
   {
-    "type": "argument_list",
-    "named": true,
-    "fields": {},
-    "children": {
-      "multiple": true,
-      "required": true,
-      "types": [
-        {
-          "type": "value",
-          "named": true
-        }
-      ]
-    }
-  },
-  {
     "type": "array",
     "named": true,
     "fields": {},
@@ -65,6 +50,21 @@
           }
         ]
       }
+    }
+  },
+  {
+    "type": "cond_expression",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": true,
+      "required": true,
+      "types": [
+        {
+          "type": "identifier",
+          "named": true
+        }
+      ]
     }
   },
   {
@@ -125,30 +125,7 @@
           "named": true
         },
         {
-          "type": "imperative_block",
-          "named": true
-        },
-        {
           "type": "math_block",
-          "named": true
-        }
-      ]
-    }
-  },
-  {
-    "type": "function_call",
-    "named": true,
-    "fields": {},
-    "children": {
-      "multiple": true,
-      "required": true,
-      "types": [
-        {
-          "type": "argument_list",
-          "named": true
-        },
-        {
-          "type": "identifier",
           "named": true
         }
       ]
@@ -170,44 +147,6 @@
     }
   },
   {
-    "type": "imperative_block",
-    "named": true,
-    "fields": {},
-    "children": {
-      "multiple": true,
-      "required": true,
-      "types": [
-        {
-          "type": "element",
-          "named": true
-        },
-        {
-          "type": "imperative_statement",
-          "named": true
-        }
-      ]
-    }
-  },
-  {
-    "type": "imperative_statement",
-    "named": true,
-    "fields": {},
-    "children": {
-      "multiple": true,
-      "required": true,
-      "types": [
-        {
-          "type": "function_call",
-          "named": true
-        },
-        {
-          "type": "identifier",
-          "named": true
-        }
-      ]
-    }
-  },
-  {
     "type": "math_block",
     "named": true,
     "fields": {},
@@ -215,14 +154,6 @@
       "multiple": true,
       "required": false,
       "types": [
-        {
-          "type": "math_expression_statement",
-          "named": true
-        },
-        {
-          "type": "math_function_definition",
-          "named": true
-        },
         {
           "type": "math_statement",
           "named": true
@@ -239,64 +170,7 @@
       "required": false,
       "types": [
         {
-          "type": "math_expression",
-          "named": true
-        }
-      ]
-    }
-  },
-  {
-    "type": "math_expression",
-    "named": true,
-    "fields": {},
-    "children": {
-      "multiple": true,
-      "required": true,
-      "types": [
-        {
-          "type": "identifier",
-          "named": true
-        },
-        {
-          "type": "math_term",
-          "named": true
-        }
-      ]
-    }
-  },
-  {
-    "type": "math_expression_statement",
-    "named": true,
-    "fields": {},
-    "children": {
-      "multiple": false,
-      "required": true,
-      "types": [
-        {
-          "type": "math_expression",
-          "named": true
-        }
-      ]
-    }
-  },
-  {
-    "type": "math_function_definition",
-    "named": true,
-    "fields": {},
-    "children": {
-      "multiple": true,
-      "required": true,
-      "types": [
-        {
-          "type": "identifier",
-          "named": true
-        },
-        {
-          "type": "identifier_list",
-          "named": true
-        },
-        {
-          "type": "math_term",
+          "type": "cond_expression",
           "named": true
         }
       ]
@@ -438,6 +312,10 @@
     }
   },
   {
+    "type": "!=",
+    "named": false
+  },
+  {
     "type": "\"",
     "named": false
   },
@@ -494,11 +372,31 @@
     "named": false
   },
   {
+    "type": "</math>",
+    "named": false
+  },
+  {
+    "type": "<=",
+    "named": false
+  },
+  {
+    "type": "<math>",
+    "named": false
+  },
+  {
     "type": "=",
     "named": false
   },
   {
+    "type": "==",
+    "named": false
+  },
+  {
     "type": ">",
+    "named": false
+  },
+  {
+    "type": ">=",
     "named": false
   },
   {
@@ -516,10 +414,6 @@
   {
     "type": "identifier",
     "named": true
-  },
-  {
-    "type": "math",
-    "named": false
   },
   {
     "type": "number",

@@ -1,7 +1,7 @@
 package main
-<wolfram.Math instance=[Ship, Algo] anotherParameter={name: "Henrique"} thirdParameter=<anotherXmlThing></anotherXmlThing>>
-    resistance(v) = a1 * v ** 2 where v <= v_critical;
-    resistance(v) = a2 * v + a3 otherwise;
-    linhaDagua = f(deslocamento);
-    deslocamento = g(linhaDagua, carga);
-</wolfram.Math>
+<wolfram instance=[Ship, Algo] anotherParameter={name: "Henrique"} thirdParameter=<anotherXmlThing></anotherXmlThing>>
+    <math>
+      resistance(v) = a1 * v ** 2 where v <= v_critical;
+      resistance(v) = a2 * v + a3 otherwise;
+    </math>
+</wolfram>

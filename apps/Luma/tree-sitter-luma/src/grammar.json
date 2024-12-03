@@ -266,10 +266,6 @@
           },
           {
             "type": "SYMBOL",
-            "name": "imperative_block"
-          },
-          {
-            "type": "SYMBOL",
             "name": "element"
           }
         ]
@@ -279,20 +275,16 @@
       "type": "SEQ",
       "members": [
         {
-          "type": "CHOICE",
-          "members": [
-            {
-              "type": "STRING",
-              "value": "math"
-            },
-            {
-              "type": "BLANK"
-            }
-          ]
+          "type": "STRING",
+          "value": "<math>"
         },
         {
           "type": "SYMBOL",
           "name": "_math_content"
+        },
+        {
+          "type": "STRING",
+          "value": "</math>"
         }
       ]
     },
@@ -302,46 +294,12 @@
       "content": {
         "type": "REPEAT1",
         "content": {
-          "type": "CHOICE",
-          "members": [
-            {
-              "type": "SYMBOL",
-              "name": "math_expression_statement"
-            },
-            {
-              "type": "SYMBOL",
-              "name": "math_statement"
-            },
-            {
-              "type": "SYMBOL",
-              "name": "math_function_definition"
-            }
-          ]
+          "type": "SYMBOL",
+          "name": "math_statement"
         }
       }
     },
-    "math_expression_statement": {
-      "type": "SEQ",
-      "members": [
-        {
-          "type": "SYMBOL",
-          "name": "math_expression"
-        },
-        {
-          "type": "CHOICE",
-          "members": [
-            {
-              "type": "STRING",
-              "value": ";"
-            },
-            {
-              "type": "BLANK"
-            }
-          ]
-        }
-      ]
-    },
-    "math_expression": {
+    "cond_expression": {
       "type": "SEQ",
       "members": [
         {
@@ -349,12 +307,29 @@
           "name": "identifier"
         },
         {
-          "type": "STRING",
-          "value": "="
+          "type": "CHOICE",
+          "members": [
+            {
+              "type": "STRING",
+              "value": "<="
+            },
+            {
+              "type": "STRING",
+              "value": ">="
+            },
+            {
+              "type": "STRING",
+              "value": "=="
+            },
+            {
+              "type": "STRING",
+              "value": "!="
+            }
+          ]
         },
         {
           "type": "SYMBOL",
-          "name": "math_term"
+          "name": "identifier"
         }
       ]
     },
@@ -472,7 +447,7 @@
             },
             {
               "type": "SYMBOL",
-              "name": "math_expression"
+              "name": "cond_expression"
             }
           ]
         },
